@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -30,6 +31,7 @@ import com.pemmob.luma.ui.auth.AuthUiState
 import com.pemmob.luma.ui.auth.AuthViewModel
 import com.pemmob.luma.ui.auth.LoginRoute
 import com.pemmob.luma.ui.auth.RegisterRoute
+import com.pemmob.luma.ui.transaction.TransactionScreen
 
 @Composable
 fun LumaNavHost(
@@ -90,10 +92,21 @@ fun LumaNavHost(
         navigation<MainGraph>(startDestination = DashboardPlaceholderRoute) {
             composable<DashboardPlaceholderRoute> {
                 DashboardPlaceholderScreen(
+                    onNavigateToTransactions = {
+                        navController.navigate(TransactionRoute)
+                    },
                     onLogoutSuccess = {
                         navController.navigate(AuthGraph) {
                             popUpTo<MainGraph> { inclusive = true }
                         }
+                    }
+                )
+            }
+
+            composable<TransactionRoute> {
+                TransactionScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
                     }
                 )
             }
@@ -143,6 +156,7 @@ private fun SplashScreen(
 
 @Composable
 private fun DashboardPlaceholderScreen(
+    onNavigateToTransactions: () -> Unit,
     onLogoutSuccess: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
@@ -183,8 +197,16 @@ private fun DashboardPlaceholderScreen(
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Button(
+                    onClick = onNavigateToTransactions,
+                    modifier = Modifier.fillMaxWidth(0.8f)
+                ) {
+                    Text("Riwayat Transaksi (Nindy)")
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
                     onClick = { viewModel.onLogoutClick() },
-                    enabled = uiState !is AuthUiState.Loading
+                    enabled = uiState !is AuthUiState.Loading,
+                    modifier = Modifier.fillMaxWidth(0.8f)
                 ) {
                     if (uiState is AuthUiState.Loading) {
                         CircularProgressIndicator(

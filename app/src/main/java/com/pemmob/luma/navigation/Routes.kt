@@ -19,3 +19,6 @@ object MainGraph
 
 @Serializable
 object DashboardPlaceholderRoute
+
+@Serializable
+object TransactionRoute

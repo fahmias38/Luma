@@ -58,6 +58,11 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
 
+    // Room Database
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
+
     // Supabase
     implementation(platform(libs.supabase.bom))
     implementation(libs.supabase.auth)
