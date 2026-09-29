@@ -16,7 +16,7 @@ class AuthRepositoryImpl @Inject constructor(
 ) : AuthRepository {
 
     override suspend fun login(email: String, password: String): Result<UserDomainModel> {
-        return runCatching {
+        return safeApiCall {
             supabaseClient.auth.signInWith(Email) {
                 this.email = email
                 this.password = password
@@ -38,7 +38,7 @@ class AuthRepositoryImpl @Inject constructor(
         password: String,
         fullName: String
     ): Result<UserDomainModel> {
-        return runCatching {
+        return safeApiCall {
             supabaseClient.auth.signUpWith(Email) {
                 this.email = email
                 this.password = password
@@ -58,7 +58,7 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun logout(): Result<Unit> {
-        return runCatching {
+        return safeApiCall {
             supabaseClient.auth.signOut()
         }
     }
@@ -83,6 +83,23 @@ class AuthRepositoryImpl @Inject constructor(
             )
         } catch (e: Exception) {
             null
+        }
+    }
+
+    private inline fun <T> safeApiCall(block: () -> T): Result<T> {
+        return try {
+            Result.success(block())
+        } catch (e: Throwable) {
+            Result.failure(mapException(e))
+        }
+    }
+
+    private fun mapException(e: Throwable): Throwable {
+        val msg = e.message ?: ""
+        return if (e is java.net.UnknownHostException || msg.contains("Unable to resolve host", ignoreCase = true) || msg.contains("UnknownHostException", ignoreCase = true)) {
+            Exception("Tidak dapat terhubung ke server Supabase. Mohon periksa kembali SUPABASE_URL di SupabaseModule.kt dan pastikan koneksi internet aktif.")
+        } else {
+            e
         }
     }
 }

@@ -8,9 +8,22 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,101 +31,269 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.pemmob.luma.ui.auth.AuthUiState
 import com.pemmob.luma.ui.auth.AuthViewModel
 import com.pemmob.luma.ui.auth.LoginRoute
 import com.pemmob.luma.ui.auth.RegisterRoute
+import com.pemmob.luma.ui.debt.AddDebtScreen
+import com.pemmob.luma.ui.debt.AddPaymentScreen
+import com.pemmob.luma.ui.debt.DebtDetailScreen
+import com.pemmob.luma.ui.debt.DebtScreen
+import com.pemmob.luma.ui.splitbill.SplitBillScreen
+import com.pemmob.luma.ui.theme.SakuCanvasBackground
+import com.pemmob.luma.ui.theme.SakuCardBackground
+import com.pemmob.luma.ui.theme.SakuTextMuted
 import com.pemmob.luma.ui.transaction.TransactionScreen
+
+// ===== DATA CLASS UNTUK BOTTOM NAV ITEMS =====
+
+private data class BottomNavItem(
+    val label: String,
+    val selectedIcon: ImageVector,
+    val unselectedIcon: ImageVector,
+    val route: Any
+)
+
+private val bottomNavItems = listOf(
+    BottomNavItem("Beranda", Icons.Filled.Home, Icons.Outlined.Home, DashboardPlaceholderRoute),
+    BottomNavItem("Transaksi", Icons.Filled.Receipt, Icons.Outlined.Receipt, TransactionRoute),
+    BottomNavItem("Utang", Icons.Filled.AccountBalance, Icons.Outlined.AccountBalance, DebtRoute),
+    BottomNavItem("Profil", Icons.Filled.Person, Icons.Outlined.Person, ProfileRoute)
+)
+
+// ===== ROUTES YANG TERMASUK MAIN BOTTOM NAV (menampilkan bottom bar) =====
+
+private val bottomNavRoutes = setOf(
+    DashboardPlaceholderRoute::class,
+    TransactionRoute::class,
+    DebtRoute::class,
+    ProfileRoute::class
+)
 
 @Composable
 fun LumaNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController()
 ) {
-    NavHost(
-        navController = navController,
-        startDestination = SplashRoute,
-        modifier = modifier
-    ) {
-        // Splash Screen / Pengecekan Sesi (Session Management)
-        composable<SplashRoute> {
-            SplashScreen(
-                onAuthenticated = {
-                    navController.navigate(MainGraph) {
-                        popUpTo<SplashRoute> { inclusive = true }
-                    }
-                },
-                onUnauthenticated = {
-                    navController.navigate(AuthGraph) {
-                        popUpTo<SplashRoute> { inclusive = true }
-                    }
-                }
-            )
-        }
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
 
-        // Sub-graph Otentikasi (Fokus Fahri)
-        navigation<AuthGraph>(startDestination = LoginRoute) {
-            composable<LoginRoute> {
-                LoginRoute(
-                    onNavigateToRegister = {
-                        navController.navigate(RegisterRoute)
-                    },
-                    onLoginSuccess = {
-                        navController.navigate(MainGraph) {
-                            popUpTo<AuthGraph> { inclusive = true }
-                        }
-                    }
-                )
-            }
+    val showBottomBar = bottomNavRoutes.any { routeClass ->
+        currentDestination?.hasRoute(routeClass) == true
+    }
 
-            composable<RegisterRoute> {
-                RegisterRoute(
-                    onNavigateToLogin = {
-                        navController.popBackStack()
-                    },
-                    onRegisterSuccess = {
-                        navController.navigate(MainGraph) {
-                            popUpTo<AuthGraph> { inclusive = true }
+    Scaffold(
+        bottomBar = {
+            if (showBottomBar) {
+                LumaBottomNavigationBar(
+                    currentDestination = currentDestination,
+                    onNavigate = { route ->
+                        navController.navigate(route) {
+                            popUpTo(DashboardPlaceholderRoute) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
                         }
                     }
                 )
             }
         }
-
-        // Sub-graph Utama Placeholder (Dashboard Nindy/Fahmi/Melysa)
-        navigation<MainGraph>(startDestination = DashboardPlaceholderRoute) {
-            composable<DashboardPlaceholderRoute> {
-                DashboardPlaceholderScreen(
-                    onNavigateToTransactions = {
-                        navController.navigate(TransactionRoute)
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = SplashRoute,
+            modifier = modifier.padding(innerPadding)
+        ) {
+            // ===== SPLASH =====
+            composable<SplashRoute> {
+                SplashScreen(
+                    onAuthenticated = {
+                        navController.navigate(MainGraph) {
+                            popUpTo<SplashRoute> { inclusive = true }
+                        }
                     },
-                    onLogoutSuccess = {
+                    onUnauthenticated = {
                         navController.navigate(AuthGraph) {
-                            popUpTo<MainGraph> { inclusive = true }
+                            popUpTo<SplashRoute> { inclusive = true }
                         }
                     }
                 )
             }
 
-            composable<TransactionRoute> {
-                TransactionScreen(
-                    onNavigateBack = {
-                        navController.popBackStack()
-                    }
-                )
+            // ===== AUTH GRAPH =====
+            navigation<AuthGraph>(startDestination = LoginRoute) {
+                composable<LoginRoute> {
+                    LoginRoute(
+                        onNavigateToRegister = { navController.navigate(RegisterRoute) },
+                        onLoginSuccess = {
+                            navController.navigate(MainGraph) {
+                                popUpTo<AuthGraph> { inclusive = true }
+                            }
+                        }
+                    )
+                }
+                composable<RegisterRoute> {
+                    RegisterRoute(
+                        onNavigateToLogin = { navController.popBackStack() },
+                        onRegisterSuccess = {
+                            navController.navigate(MainGraph) {
+                                popUpTo<AuthGraph> { inclusive = true }
+                            }
+                        }
+                    )
+                }
+            }
+
+            // ===== MAIN GRAPH =====
+            navigation<MainGraph>(startDestination = DashboardPlaceholderRoute) {
+
+                // Dashboard (placeholder)
+                composable<DashboardPlaceholderRoute> {
+                    DashboardPlaceholderScreen(
+                        onNavigateToTransactions = { navController.navigate(TransactionRoute) },
+                        onNavigateToDebt = { navController.navigate(DebtRoute) },
+                        onNavigateToSplitBill = { navController.navigate(SplitBillRoute) },
+                        onLogoutSuccess = {
+                            navController.navigate(AuthGraph) {
+                                popUpTo<MainGraph> { inclusive = true }
+                            }
+                        }
+                    )
+                }
+
+                // Transaksi
+                composable<TransactionRoute> {
+                    TransactionScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                // ===== DEBT & RECEIVABLE =====
+
+                composable<DebtRoute> {
+                    DebtScreen(
+                        onNavigateToDetail = { debtId ->
+                            navController.navigate(DebtDetailRoute(debtId))
+                        },
+                        onNavigateToAddDebt = { navController.navigate(AddDebtRoute) },
+                        onNavigateToSplitBill = { navController.navigate(SplitBillRoute) }
+                    )
+                }
+
+                composable<DebtDetailRoute> { backStackEntry ->
+                    val route = backStackEntry.toRoute<DebtDetailRoute>()
+                    DebtDetailScreen(
+                        debtId = route.debtId,
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToAddPayment = { debtId ->
+                            navController.navigate(AddPaymentRoute(debtId))
+                        }
+                    )
+                }
+
+                composable<AddDebtRoute> {
+                    AddDebtScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable<AddPaymentRoute> { backStackEntry ->
+                    val route = backStackEntry.toRoute<AddPaymentRoute>()
+                    AddPaymentScreen(
+                        debtId = route.debtId,
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                // ===== SPLIT BILL =====
+
+                composable<SplitBillRoute> {
+                    SplitBillScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        onSplitBillCreated = { splitBillId ->
+                            // Setelah Split Bill tersimpan, navigasi ke Debt list
+                            navController.navigate(DebtRoute) {
+                                popUpTo(SplitBillRoute) { inclusive = true }
+                            }
+                        }
+                    )
+                }
+
+                // ===== PROFIL =====
+
+                composable<ProfileRoute> {
+                    ProfilePlaceholderScreen(
+                        onLogoutSuccess = {
+                            navController.navigate(AuthGraph) {
+                                popUpTo<MainGraph> { inclusive = true }
+                            }
+                        }
+                    )
+                }
             }
         }
     }
 }
+
+// ===== BOTTOM NAVIGATION BAR =====
+
+@Composable
+private fun LumaBottomNavigationBar(
+    currentDestination: androidx.navigation.NavDestination?,
+    onNavigate: (Any) -> Unit
+) {
+    NavigationBar(
+        containerColor = SakuCardBackground,
+        tonalElevation = 0.dp
+    ) {
+        bottomNavItems.forEach { item ->
+            val selected = currentDestination?.hasRoute(item.route::class) == true
+            NavigationBarItem(
+                selected = selected,
+                onClick = { onNavigate(item.route) },
+                icon = {
+                    Icon(
+                        imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                        contentDescription = item.label,
+                        modifier = Modifier.size(24.dp)
+                    )
+                },
+                label = {
+                    Text(
+                        text = item.label,
+                        fontSize = 11.sp,
+                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
+                    )
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    unselectedIconColor = SakuTextMuted,
+                    unselectedTextColor = SakuTextMuted,
+                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                )
+            )
+        }
+    }
+}
+
+// ===== SPLASH SCREEN =====
 
 @Composable
 private fun SplashScreen(
@@ -122,9 +303,7 @@ private fun SplashScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
-        viewModel.checkSession()
-    }
+    LaunchedEffect(Unit) { viewModel.checkSession() }
 
     LaunchedEffect(uiState) {
         when (uiState) {
@@ -139,9 +318,7 @@ private fun SplashScreen(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = "LUMA",
                 style = MaterialTheme.typography.displayMedium,
@@ -154,9 +331,13 @@ private fun SplashScreen(
     }
 }
 
+// ===== DASHBOARD PLACEHOLDER =====
+
 @Composable
 private fun DashboardPlaceholderScreen(
     onNavigateToTransactions: () -> Unit,
+    onNavigateToDebt: () -> Unit,
+    onNavigateToSplitBill: () -> Unit,
     onLogoutSuccess: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
@@ -164,59 +345,120 @@ private fun DashboardPlaceholderScreen(
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        if (currentUser == null) {
-            viewModel.checkSession()
-        }
+        if (currentUser == null) viewModel.checkSession()
     }
 
     LaunchedEffect(uiState) {
-        if (uiState is AuthUiState.LoggedOut) {
-            onLogoutSuccess()
-        }
+        if (uiState is AuthUiState.LoggedOut) onLogoutSuccess()
     }
 
-    Scaffold { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentAlignment = Alignment.Center
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(horizontal = 32.dp)
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
+            Text(
+                text = "Beranda LUMA",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Selamat datang, ${currentUser?.fullName ?: currentUser?.email ?: "Pengguna"}",
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(
+                onClick = onNavigateToTransactions,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = "Dashboard LUMA",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Selamat Datang, ${currentUser?.fullName ?: currentUser?.email ?: "Pengguna"}",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                Button(
-                    onClick = onNavigateToTransactions,
-                    modifier = Modifier.fillMaxWidth(0.8f)
-                ) {
-                    Text("Riwayat Transaksi (Nindy)")
+                Text("Riwayat Transaksi")
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = onNavigateToDebt,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Utang & Piutang")
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = onNavigateToSplitBill,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Buat Split Bill")
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = { viewModel.onLogoutClick() },
+                enabled = uiState !is AuthUiState.Loading,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (uiState is AuthUiState.Loading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(24.dp)
+                    )
+                } else {
+                    Text("Keluar")
                 }
-                Spacer(modifier = Modifier.height(12.dp))
-                Button(
-                    onClick = { viewModel.onLogoutClick() },
-                    enabled = uiState !is AuthUiState.Loading,
-                    modifier = Modifier.fillMaxWidth(0.8f)
-                ) {
-                    if (uiState is AuthUiState.Loading) {
-                        CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            strokeWidth = 2.dp,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    } else {
-                        Text("Keluar (Logout)")
-                    }
+            }
+        }
+    }
+}
+
+// ===== PROFILE PLACEHOLDER =====
+
+@Composable
+private fun ProfilePlaceholderScreen(
+    onLogoutSuccess: () -> Unit,
+    viewModel: AuthViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
+
+    LaunchedEffect(uiState) {
+        if (uiState is AuthUiState.LoggedOut) onLogoutSuccess()
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(horizontal = 32.dp)
+        ) {
+            Icon(
+                Icons.Filled.Person,
+                contentDescription = null,
+                modifier = Modifier.size(72.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = currentUser?.fullName ?: currentUser?.email ?: "Pengguna",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            currentUser?.email?.let { email ->
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(text = email, color = SakuTextMuted, fontSize = 14.sp)
+            }
+            Spacer(modifier = Modifier.height(32.dp))
+            Button(
+                onClick = { viewModel.onLogoutClick() },
+                enabled = uiState !is AuthUiState.Loading,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (uiState is AuthUiState.Loading) {
+                    CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(22.dp))
+                } else {
+                    Text("Keluar", fontWeight = FontWeight.Bold)
                 }
             }
         }
