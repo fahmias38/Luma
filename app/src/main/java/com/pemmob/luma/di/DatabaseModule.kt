@@ -2,6 +2,10 @@ package com.pemmob.luma.di
 
 import android.content.Context
 import androidx.room.Room
+import com.pemmob.luma.data.local.dao.DebtReceivableDao
+import com.pemmob.luma.data.local.dao.PaymentDao
+import com.pemmob.luma.data.local.dao.SplitBillDao
+import com.pemmob.luma.data.local.dao.SplitBillParticipantDao
 import com.pemmob.luma.data.local.dao.TransactionDao
 import com.pemmob.luma.data.local.database.AppDatabase
 import dagger.Module
@@ -30,9 +34,26 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideTransactionDao(
-        database: AppDatabase
-    ): TransactionDao {
-        return database.transactionDao()
-    }
+    fun provideTransactionDao(database: AppDatabase): TransactionDao =
+        database.transactionDao()
+
+    @Provides
+    @Singleton
+    fun provideDebtReceivableDao(database: AppDatabase): DebtReceivableDao =
+        database.debtReceivableDao()
+
+    @Provides
+    @Singleton
+    fun providePaymentDao(database: AppDatabase): PaymentDao =
+        database.paymentDao()
+
+    @Provides
+    @Singleton
+    fun provideSplitBillDao(database: AppDatabase): SplitBillDao =
+        database.splitBillDao()
+
+    @Provides
+    @Singleton
+    fun provideSplitBillParticipantDao(database: AppDatabase): SplitBillParticipantDao =
+        database.splitBillParticipantDao()
 }

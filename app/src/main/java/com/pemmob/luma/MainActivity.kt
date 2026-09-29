@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
             LUMATheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = MaterialTheme.colorScheme.background,
                 ) {
                     LumaNavHost()
                 }
