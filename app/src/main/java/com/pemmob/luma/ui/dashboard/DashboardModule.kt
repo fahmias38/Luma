@@ -10,6 +10,6 @@ import dagger.hilt.components.SingletonComponent
 abstract class DashboardModule {
     @Binds
     abstract fun bindDashboardRepository(
-        impl: DummyDashboardRepository
+        impl: DashboardRepositoryImpl
     ): DashboardRepository
 }

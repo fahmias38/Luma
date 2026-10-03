@@ -18,9 +18,6 @@ data class DashboardData(
     val pendingReceivableCount: Int,
     val topCategoryName: String,
     val topCategoryPercentage: Int,
-    val budgetUsedPercentage: Float,
-    val remainingBudget: Double,
-    val budgetStatus: String,
     val recentTransactions: List<TransactionData>
 )
 

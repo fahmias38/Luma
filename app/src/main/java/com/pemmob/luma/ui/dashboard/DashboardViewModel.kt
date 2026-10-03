@@ -25,8 +25,9 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = DashboardUiState.Loading
             try {
-                val data = repository.getDashboardData()
-                _uiState.value = DashboardUiState.Success(data)
+                repository.getDashboardData().collect { data ->
+                    _uiState.value = DashboardUiState.Success(data)
+                }
             } catch (e: Exception) {
                 _uiState.value = DashboardUiState.Error(e.message ?: "Terjadi kesalahan yang tidak diketahui.")
             }

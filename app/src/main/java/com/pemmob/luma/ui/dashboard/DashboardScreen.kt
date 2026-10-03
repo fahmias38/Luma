@@ -142,10 +142,7 @@ private fun DashboardSuccessContent(
         item {
             InsightCard(
                 topCategoryName = data.topCategoryName,
-                topCategoryPercentage = data.topCategoryPercentage,
-                budgetUsedPercentage = data.budgetUsedPercentage,
-                remainingBudget = data.remainingBudget,
-                budgetStatus = data.budgetStatus
+                topCategoryPercentage = data.topCategoryPercentage
             )
         }
         item {
@@ -470,10 +467,7 @@ private fun DebtSummaryCard(
 @Composable
 private fun InsightCard(
     topCategoryName: String,
-    topCategoryPercentage: Int,
-    budgetUsedPercentage: Float,
-    remainingBudget: Double,
-    budgetStatus: String
+    topCategoryPercentage: Int
 ) {
     LumaCard {
         Row(
@@ -490,17 +484,6 @@ private fun InsightCard(
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
-            Box(
-                modifier = Modifier
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = budgetStatus,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
         }
         Spacer(modifier = Modifier.height(16.dp))
         
@@ -510,7 +493,7 @@ private fun InsightCard(
                 withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)) {
                     append("$topCategoryName ($topCategoryPercentage%)")
                 }
-                append(" dari total belanja.")
+                append(" dari pengeluaran.")
             },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface
@@ -528,33 +511,10 @@ private fun InsightCard(
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(budgetUsedPercentage / 100f)
+                    .fillMaxWidth(topCategoryPercentage / 100f)
                     .height(8.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primary) // Primary filled part
-            )
-        }
-        
-        Spacer(modifier = Modifier.height(12.dp))
-        
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                "Telah terpakai $budgetUsedPercentage% dari budget bulanan",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-            )
-            
-            val formattedRemaining = NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply {
-                maximumFractionDigits = 0
-            }.format(remainingBudget).replace("Rp", "Rp")
-            
-            Text(
-                "Sisa $formattedRemaining",
-                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -582,9 +542,6 @@ private fun getDummyDashboardData() = DashboardData(
     pendingReceivableCount = 3,
     topCategoryName = "Makanan",
     topCategoryPercentage = 45,
-    budgetUsedPercentage = 37.5f,
-    remainingBudget = 1250000.0,
-    budgetStatus = "Aman",
     recentTransactions = listOf(
         TransactionData("1", "Makan Siang Kantin", "10 Sep", "Makanan", 25000.0, false, "QRIS"),
         TransactionData("2", "Ojek ke Kampus", "10 Sep", "Transportasi", 15000.0, false, "E-Wallet"),
