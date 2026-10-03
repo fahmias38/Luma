@@ -50,6 +50,7 @@ import com.pemmob.luma.ui.auth.AuthUiState
 import com.pemmob.luma.ui.auth.AuthViewModel
 import com.pemmob.luma.ui.auth.LoginRoute
 import com.pemmob.luma.ui.auth.RegisterRoute
+import com.pemmob.luma.ui.dashboard.DashboardRoute
 import com.pemmob.luma.ui.debt.AddDebtScreen
 import com.pemmob.luma.ui.debt.AddPaymentScreen
 import com.pemmob.luma.ui.debt.DebtDetailScreen
@@ -163,17 +164,13 @@ fun LumaNavHost(
             // ===== MAIN GRAPH =====
             navigation<MainGraph>(startDestination = DashboardPlaceholderRoute) {
 
-                // Dashboard (placeholder)
+                // Dashboard
                 composable<DashboardPlaceholderRoute> {
-                    DashboardPlaceholderScreen(
-                        onNavigateToTransactions = { navController.navigate(TransactionRoute) },
-                        onNavigateToDebt = { navController.navigate(DebtRoute) },
-                        onNavigateToSplitBill = { navController.navigate(SplitBillRoute) },
-                        onLogoutSuccess = {
-                            navController.navigate(AuthGraph) {
-                                popUpTo<MainGraph> { inclusive = true }
-                            }
-                        }
+                    DashboardRoute(
+                        onAddTransactionClick = { navController.navigate(TransactionRoute) },
+                        onSeeAllTransactionsClick = { navController.navigate(TransactionRoute) },
+                        onDebtClick = { navController.navigate(DebtRoute) },
+                        onSplitBillClick = { navController.navigate(SplitBillRoute) }
                     )
                 }
 
