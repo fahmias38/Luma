@@ -56,7 +56,7 @@ import com.pemmob.luma.ui.debt.AddPaymentScreen
 import com.pemmob.luma.ui.debt.DebtDetailScreen
 import com.pemmob.luma.ui.debt.DebtScreen
 import com.pemmob.luma.ui.splitbill.SplitBillScreen
-import com.pemmob.luma.ui.theme.SakuCanvasBackground
+import com.pemmob.luma.ui.statistics.StatisticsContent
 import com.pemmob.luma.ui.theme.SakuCardBackground
 import com.pemmob.luma.ui.theme.SakuTextMuted
 import com.pemmob.luma.ui.transaction.TransactionScreen
@@ -170,7 +170,8 @@ fun LumaNavHost(
                         onAddTransactionClick = { navController.navigate(TransactionRoute) },
                         onSeeAllTransactionsClick = { navController.navigate(TransactionRoute) },
                         onDebtClick = { navController.navigate(DebtRoute) },
-                        onSplitBillClick = { navController.navigate(SplitBillRoute) }
+                        onSplitBillClick = { navController.navigate(SplitBillRoute) },
+                        onStatisticsClick = { navController.navigate(StatisticsRoute) }
                     )
                 }
 
@@ -229,6 +230,14 @@ fun LumaNavHost(
                                 popUpTo(SplitBillRoute) { inclusive = true }
                             }
                         }
+                    )
+                }
+
+                // ===== STATISTICS =====
+
+                composable<StatisticsRoute> {
+                    StatisticsContent(
+                        onNavigateBack = { navController.popBackStack() }
                     )
                 }
 

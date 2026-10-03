@@ -34,6 +34,7 @@ fun DashboardScreen(
     onSplitBillClick: () -> Unit,
     onDebtClick: () -> Unit,
     onSeeAllTransactionsClick: () -> Unit,
+    onStatisticsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -77,7 +78,8 @@ fun DashboardScreen(
                         onAddTransactionClick = onAddTransactionClick,
                         onSplitBillClick = onSplitBillClick,
                         onDebtClick = onDebtClick,
-                        onSeeAllTransactionsClick = onSeeAllTransactionsClick
+                        onSeeAllTransactionsClick = onSeeAllTransactionsClick,
+                        onStatisticsClick = onStatisticsClick
                     )
                 }
             }
@@ -91,7 +93,8 @@ private fun DashboardSuccessContent(
     onAddTransactionClick: () -> Unit,
     onSplitBillClick: () -> Unit,
     onDebtClick: () -> Unit,
-    onSeeAllTransactionsClick: () -> Unit
+    onSeeAllTransactionsClick: () -> Unit,
+    onStatisticsClick: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier
@@ -142,7 +145,8 @@ private fun DashboardSuccessContent(
         item {
             InsightCard(
                 topCategoryName = data.topCategoryName,
-                topCategoryPercentage = data.topCategoryPercentage
+                topCategoryPercentage = data.topCategoryPercentage,
+                onCardClick = onStatisticsClick
             )
         }
         item {
@@ -467,9 +471,10 @@ private fun DebtSummaryCard(
 @Composable
 private fun InsightCard(
     topCategoryName: String,
-    topCategoryPercentage: Int
+    topCategoryPercentage: Int,
+    onCardClick: () -> Unit
 ) {
-    LumaCard {
+    LumaCard(modifier = Modifier.clickable { onCardClick() }) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -484,6 +489,11 @@ private fun InsightCard(
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
+            Text(
+                text = "Lihat Statistik",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
         }
         Spacer(modifier = Modifier.height(16.dp))
         
@@ -559,7 +569,8 @@ private fun PreviewDashboardSuccess() {
             onAddTransactionClick = {},
             onSplitBillClick = {},
             onDebtClick = {},
-            onSeeAllTransactionsClick = {}
+            onSeeAllTransactionsClick = {},
+            onStatisticsClick = {}
         )
     }
 }
@@ -573,7 +584,8 @@ private fun PreviewDashboardLoading() {
             onAddTransactionClick = {},
             onSplitBillClick = {},
             onDebtClick = {},
-            onSeeAllTransactionsClick = {}
+            onSeeAllTransactionsClick = {},
+            onStatisticsClick = {}
         )
     }
 }
@@ -588,7 +600,8 @@ private fun PreviewDashboardEmpty() {
             onAddTransactionClick = {},
             onSplitBillClick = {},
             onDebtClick = {},
-            onSeeAllTransactionsClick = {}
+            onSeeAllTransactionsClick = {},
+            onStatisticsClick = {}
         )
     }
 }
@@ -602,7 +615,8 @@ private fun PreviewDashboardError() {
             onAddTransactionClick = {},
             onSplitBillClick = {},
             onDebtClick = {},
-            onSeeAllTransactionsClick = {}
+            onSeeAllTransactionsClick = {},
+            onStatisticsClick = {}
         )
     }
 }
