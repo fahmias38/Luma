@@ -50,3 +50,6 @@ data class SplitBillSuccessRoute(val splitBillId: String)
 @Serializable
 object ProfileRoute
 
+@Serializable
+object StatisticsRoute
+

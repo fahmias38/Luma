@@ -11,6 +11,7 @@ fun DashboardRoute(
     onSplitBillClick: () -> Unit,
     onDebtClick: () -> Unit,
     onSeeAllTransactionsClick: () -> Unit,
+    onStatisticsClick: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -20,6 +21,7 @@ fun DashboardRoute(
         onAddTransactionClick = onAddTransactionClick,
         onSplitBillClick = onSplitBillClick,
         onDebtClick = onDebtClick,
-        onSeeAllTransactionsClick = onSeeAllTransactionsClick
+        onSeeAllTransactionsClick = onSeeAllTransactionsClick,
+        onStatisticsClick = onStatisticsClick
     )
 }
