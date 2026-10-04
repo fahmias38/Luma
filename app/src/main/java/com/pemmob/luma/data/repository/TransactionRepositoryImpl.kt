@@ -1,5 +1,6 @@
 package com.pemmob.luma.data.repository
 
+import android.util.Log
 import com.pemmob.luma.data.local.dao.TransactionDao
 import com.pemmob.luma.data.local.entity.TransactionEntity
 import com.pemmob.luma.data.remote.model.TransactionRemote
@@ -46,6 +47,8 @@ class TransactionRepositoryImpl @Inject constructor(
                     createdAt = transaction.createdAt
                 )
             )
+        }.onFailure { e ->
+            Log.e("SupabaseSync", "Gagal sinkronisasi transaksi ke Supabase: ${e.message}", e)
         }
     }
 
@@ -66,6 +69,8 @@ class TransactionRepositoryImpl @Inject constructor(
                     createdAt = transaction.createdAt
                 )
             )
+        }.onFailure { e ->
+            Log.e("SupabaseSync", "Gagal update transaksi ke Supabase: ${e.message}", e)
         }
     }
 
@@ -76,6 +81,8 @@ class TransactionRepositoryImpl @Inject constructor(
             postgrest["transactions"].delete {
                 filter { eq("id", transaction.id) }
             }
+        }.onFailure { e ->
+            Log.e("SupabaseSync", "Gagal hapus transaksi dari Supabase: ${e.message}", e)
         }
     }
 
@@ -88,6 +95,8 @@ class TransactionRepositoryImpl @Inject constructor(
                 postgrest["transactions"].delete {
                     filter { eq("id", transactionId) }
                 }
+            }.onFailure { e ->
+                Log.e("SupabaseSync", "Gagal hapus transaksi dari Supabase: ${e.message}", e)
             }
         }
     }

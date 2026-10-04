@@ -30,6 +30,9 @@ interface DebtReceivableDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: DebtReceivableEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(entities: List<DebtReceivableEntity>): List<Long>
+
     @Update
     suspend fun update(entity: DebtReceivableEntity): Int
 

@@ -24,7 +24,6 @@ class DashboardRepositoryImpl @Inject constructor(
         return flow {
             val user = authRepository.getCurrentUser()
             if (user == null) {
-                // Return dummy or empty flow if user is not logged in
                 emit(getEmptyDashboardData())
                 return@flow
             }
@@ -32,7 +31,11 @@ class DashboardRepositoryImpl @Inject constructor(
             val userId = user.id
             val userName = user.fullName ?: user.email.substringBefore("@")
 
-            // Observe Transactions and Debts
+            // Sync data dari Supabase Cloud ke Room Local DB otomatis saat masuk dashboard
+            runCatching { transactionRepository.syncRemoteTransactions(userId) }
+            runCatching { debtReceivableRepository.syncRemoteDebts(userId) }
+
+            // Observe Transactions and Debts dari Room DB
             val allTransactionsFlow = transactionRepository.getAllTransactions(userId)
             val debtsFlow = debtReceivableRepository.observeByType(userId, "DEBT")
             val receivablesFlow = debtReceivableRepository.observeByType(userId, "RECEIVABLE")
@@ -50,12 +53,10 @@ class DashboardRepositoryImpl @Inject constructor(
                 val formatter = SimpleDateFormat("MMMM yyyy", Locale.forLanguageTag("id-ID"))
                 val monthYear = formatter.format(Date())
 
-                // Balance = Total Income (all time) - Total Expense (all time)
                 val totalIncomeAllTime = transactions.filter { it.type == "INCOME" }.sumOf { it.amount }
                 val totalExpenseAllTime = transactions.filter { it.type == "EXPENSE" }.sumOf { it.amount }
                 val balance = (totalIncomeAllTime - totalExpenseAllTime).toDouble()
 
-                // Income & Expense for current month
                 val currentMonthTransactions = transactions.filter {
                     val txCalendar = Calendar.getInstance().apply { timeInMillis = it.date }
                     txCalendar.get(Calendar.MONTH) == currentMonth && txCalendar.get(Calendar.YEAR) == currentYear
@@ -64,7 +65,6 @@ class DashboardRepositoryImpl @Inject constructor(
                 val currentMonthIncome = currentMonthTransactions.filter { it.type == "INCOME" }.sumOf { it.amount }.toDouble()
                 val currentMonthExpense = currentMonthTransactions.filter { it.type == "EXPENSE" }.sumOf { it.amount }.toDouble()
 
-                // Unpaid Debts & Receivables
                 val unpaidDebts = debts.filter { it.status == "UNPAID" }
                 val totalDebt = unpaidDebts.sumOf { it.amount - it.paidAmount }.toDouble()
                 val pendingDebtCount = unpaidDebts.size
@@ -73,7 +73,6 @@ class DashboardRepositoryImpl @Inject constructor(
                 val totalReceivable = unpaidReceivables.sumOf { it.amount - it.paidAmount }.toDouble()
                 val pendingReceivableCount = unpaidReceivables.size
 
-                // Top Category for current month expenses
                 val expenseByCategory = currentMonthTransactions
                     .filter { it.type == "EXPENSE" }
                     .groupBy { it.category }
@@ -87,7 +86,6 @@ class DashboardRepositoryImpl @Inject constructor(
                     0
                 }
 
-                // Recent 4 transactions
                 val dateFormat = SimpleDateFormat("dd MMM", Locale.forLanguageTag("id-ID"))
                 val recentTransactions = transactions
                     .sortedByDescending { it.date }

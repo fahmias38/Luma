@@ -41,6 +41,10 @@ class TransactionViewModel @Inject constructor(
                 val currentUser = authRepository.getCurrentUser()
                 val userId = currentUser?.id ?: "local_test_user_id"
 
+                if (currentUser != null && currentUser.id.isNotBlank() && currentUser.id != "local_test_user_id") {
+                    transactionRepository.syncRemoteTransactions(currentUser.id)
+                }
+
                 transactionRepository.getAllTransactions(userId)
                     .catch { e ->
                         _uiState.value = TransactionUiState.Error(e.message ?: "Terjadi kesalahan saat memuat transaksi.")

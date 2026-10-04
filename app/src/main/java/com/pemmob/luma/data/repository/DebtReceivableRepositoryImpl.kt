@@ -40,10 +40,8 @@ class DebtReceivableRepositoryImpl @Inject constructor(
 
     override suspend fun insertDebt(entity: DebtReceivableEntity): Result<String> {
         return runCatching {
-            // 1. Simpan ke Room (lokal, langsung)
             debtDao.insert(entity)
 
-            // 2. Sinkronisasi ke Supabase (background, non-blocking untuk UX)
             runCatching {
                 postgrest["debt_receivables"].upsert(
                     DebtReceivableRemote(
@@ -62,7 +60,7 @@ class DebtReceivableRepositoryImpl @Inject constructor(
                         updatedAt = entity.updatedAt
                     )
                 )
-            } // Supabase error tidak di-throw, Room menjadi fallback
+            }
 
             entity.id
         }
@@ -106,17 +104,6 @@ class DebtReceivableRepositoryImpl @Inject constructor(
         }
     }
 
-    // ===== PAYMENT =====
-
-    /**
-     * Alur catat pembayaran:
-     * 1. Ambil data debt existing
-     * 2. Validasi: payment tidak boleh melebihi remaining
-     * 3. Insert payment baru ke Room + Supabase
-     * 4. Hitung ulang total paidAmount dari semua payments
-     * 5. Derive status (PAID jika paidAmount >= amount)
-     * 6. Update debt entity di Room + Supabase
-     */
     override suspend fun addPayment(
         debtId: String,
         amount: Long,
@@ -135,7 +122,6 @@ class DebtReceivableRepositoryImpl @Inject constructor(
                 "Nominal pembayaran (Rp$amount) melebihi sisa kewajiban (Rp$remaining)."
             }
 
-            // Insert payment baru
             val payment = PaymentEntity(
                 debtReceivableId = debtId,
                 amount = amount,
@@ -144,7 +130,6 @@ class DebtReceivableRepositoryImpl @Inject constructor(
             )
             paymentDao.insert(payment)
 
-            // Sync payment ke Supabase
             runCatching {
                 postgrest["payments"].upsert(
                     PaymentRemote(
@@ -158,7 +143,6 @@ class DebtReceivableRepositoryImpl @Inject constructor(
                 )
             }
 
-            // Recalculate paidAmount
             val newPaidAmount = paymentDao.getTotalPaidForDebt(debtId) ?: 0L
             val newStatus = if (newPaidAmount >= debt.amount) "PAID" else "UNPAID"
 
@@ -169,7 +153,6 @@ class DebtReceivableRepositoryImpl @Inject constructor(
             )
             debtDao.update(updatedDebt)
 
-            // Sync updated debt ke Supabase
             runCatching {
                 postgrest["debt_receivables"].upsert(
                     DebtReceivableRemote(
@@ -188,6 +171,57 @@ class DebtReceivableRepositoryImpl @Inject constructor(
                         updatedAt = updatedDebt.updatedAt
                     )
                 )
+            }
+        }
+    }
+
+    override suspend fun syncRemoteDebts(userId: String): Result<Unit> {
+        return runCatching {
+            val remoteDebts = postgrest["debt_receivables"]
+                .select {
+                    filter { eq("user_id", userId) }
+                }
+                .decodeList<DebtReceivableRemote>()
+
+            val localEntities = remoteDebts.map { remote ->
+                DebtReceivableEntity(
+                    id = remote.id,
+                    userId = remote.userId,
+                    personName = remote.personName,
+                    type = remote.type,
+                    amount = remote.amount,
+                    paidAmount = remote.paidAmount,
+                    description = remote.description,
+                    date = remote.date,
+                    source = remote.source,
+                    splitBillId = remote.splitBillId,
+                    status = remote.status,
+                    createdAt = remote.createdAt,
+                    updatedAt = remote.updatedAt
+                )
+            }
+
+            if (localEntities.isNotEmpty()) {
+                debtDao.insertAll(localEntities)
+            }
+
+            val remotePayments = postgrest["payments"]
+                .select()
+                .decodeList<PaymentRemote>()
+
+            val paymentEntities = remotePayments.map { p ->
+                PaymentEntity(
+                    id = p.id,
+                    debtReceivableId = p.debtReceivableId,
+                    amount = p.amount,
+                    paymentDate = p.paymentDate,
+                    note = p.note,
+                    createdAt = p.createdAt
+                )
+            }
+
+            if (paymentEntities.isNotEmpty()) {
+                paymentDao.insertAll(paymentEntities)
             }
         }
     }
