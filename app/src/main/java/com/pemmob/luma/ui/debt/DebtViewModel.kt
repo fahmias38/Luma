@@ -54,7 +54,13 @@ class DebtViewModel @Inject constructor(
         viewModelScope.launch {
             _listUiState.value = DebtListUiState.Loading
             try {
-                val userId = authRepository.getCurrentUser()?.id ?: "local_test_user_id"
+                val currentUser = authRepository.getCurrentUser()
+                val userId = currentUser?.id ?: "local_test_user_id"
+
+                if (currentUser != null && currentUser.id.isNotBlank() && currentUser.id != "local_test_user_id") {
+                    debtRepository.syncRemoteDebts(currentUser.id)
+                }
+
                 debtRepository.observeAll(userId)
                     .catch { e ->
                         _listUiState.value = DebtListUiState.Error(

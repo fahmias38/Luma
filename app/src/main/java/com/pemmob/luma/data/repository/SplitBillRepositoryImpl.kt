@@ -31,30 +31,6 @@ class SplitBillRepositoryImpl @Inject constructor(
     override fun observeParticipants(splitBillId: String): Flow<List<SplitBillParticipantEntity>> =
         participantDao.observeByBillId(splitBillId)
 
-    /**
-     * LOGIKA UTAMA SPLIT BILL
-     *
-     * Equal Split dengan Remainder Handling:
-     * - shareAmount = totalAmount / participantCount (integer division)
-     * - remainder = totalAmount % participantCount
-     * - Participant PERTAMA yang bukan payer mendapatkan (shareAmount + remainder)
-     *   sehingga total share selalu == totalAmount
-     *
-     * Contoh: Rp100.000 / 3 = Rp33.333 per orang, remainder = 1
-     * - Payer: Fahmi       → share = 33.334 (+ remainder)
-     * - Non-payer 1: Fahri → share = 33.333 (debt Rp33.333 ke Fahmi)
-     * - Non-payer 2: Melysa → share = 33.333 (debt Rp33.333 ke Fahmi)
-     *
-     * Settlement yang dihasilkan:
-     * - Fahri berutang Rp33.333 kepada Fahmi → RECEIVABLE bagi Fahmi
-     * - Melysa berutang Rp33.333 kepada Fahmi → RECEIVABLE bagi Fahmi
-     *
-     * CATATAN: Sistem mencatat dari perspektif userId (user yang login).
-     * - Jika user adalah payer: generated records = RECEIVABLE (orang lain berutang ke user)
-     * - Jika user adalah non-payer: generated records = DEBT (user berutang ke payer)
-     * Untuk MVP, semua participants dianggap "teman" — bukan user lain yang login.
-     * Record dibuat sebagai RECEIVABLE dari perspektif userId karena userId = payer.
-     */
     override suspend fun createSplitBill(
         userId: String,
         title: String,
@@ -72,7 +48,6 @@ class SplitBillRepositoryImpl @Inject constructor(
             val baseShare = totalAmount / participantCount
             val remainder = totalAmount % participantCount
 
-            // Buat SplitBill entity
             val splitBill = SplitBillEntity(
                 userId = userId,
                 title = title,
@@ -82,7 +57,6 @@ class SplitBillRepositoryImpl @Inject constructor(
             )
             splitBillDao.insert(splitBill)
 
-            // Sync SplitBill ke Supabase
             runCatching {
                 postgrest["split_bills"].upsert(
                     SplitBillRemote(
@@ -98,8 +72,6 @@ class SplitBillRepositoryImpl @Inject constructor(
                 )
             }
 
-            // Hitung share per orang dan assign remainder ke payer
-            // Payer mendapat share + remainder (mereka sudah bayar lebih, ini adil)
             val participants = mutableListOf<SplitBillParticipantEntity>()
             val debtEntities = mutableListOf<DebtReceivableEntity>()
             var remainderAssigned = false
@@ -107,7 +79,6 @@ class SplitBillRepositoryImpl @Inject constructor(
             participantNames.forEach { name ->
                 val isPayer = name == payerName
 
-                // Payer mendapat (baseShare + remainder) sebagai kontribusinya
                 val share = if (isPayer && !remainderAssigned) {
                     remainderAssigned = true
                     baseShare + remainder
@@ -115,15 +86,12 @@ class SplitBillRepositoryImpl @Inject constructor(
                     baseShare
                 }
 
-                // Debt/Receivable hanya dibuat untuk non-payer
                 var debtId: String? = null
                 if (!isPayer) {
-                    // Non-payer berutang shareAmount kepada payer
-                    // Dari perspektif userId (payer): ini adalah RECEIVABLE
                     val debtEntity = DebtReceivableEntity(
                         userId = userId,
                         personName = name,
-                        type = "RECEIVABLE", // User (payer) memiliki piutang kepada participant
+                        type = "RECEIVABLE",
                         amount = share,
                         paidAmount = 0L,
                         description = "Split Bill: $title",
@@ -147,15 +115,12 @@ class SplitBillRepositoryImpl @Inject constructor(
                 )
             }
 
-            // Insert semua participants
             participantDao.insertAll(participants)
 
-            // Insert semua DebtReceivable yang dihasilkan
             debtEntities.forEach { debt ->
                 debtRepository.insertDebt(debt)
             }
 
-            // Sync participants ke Supabase
             runCatching {
                 val remoteParticipants = participants.map { p ->
                     SplitBillParticipantRemote(
@@ -181,6 +146,52 @@ class SplitBillRepositoryImpl @Inject constructor(
                 postgrest["split_bills"].delete {
                     filter { eq("id", id) }
                 }
+            }
+        }
+    }
+
+    override suspend fun syncRemoteSplitBills(userId: String): Result<Unit> {
+        return runCatching {
+            val remoteBills = postgrest["split_bills"]
+                .select {
+                    filter { eq("user_id", userId) }
+                }
+                .decodeList<SplitBillRemote>()
+
+            val localBills = remoteBills.map { remote ->
+                SplitBillEntity(
+                    id = remote.id,
+                    userId = remote.userId,
+                    title = remote.title,
+                    totalAmount = remote.totalAmount,
+                    payerName = remote.payerName,
+                    date = remote.date,
+                    createdAt = remote.createdAt,
+                    updatedAt = remote.updatedAt
+                )
+            }
+
+            if (localBills.isNotEmpty()) {
+                splitBillDao.insertAll(localBills)
+            }
+
+            val remoteParticipants = postgrest["split_bill_participants"]
+                .select()
+                .decodeList<SplitBillParticipantRemote>()
+
+            val localParticipants = remoteParticipants.map { p ->
+                SplitBillParticipantEntity(
+                    id = p.id,
+                    splitBillId = p.splitBillId,
+                    name = p.name,
+                    shareAmount = p.shareAmount,
+                    isPayer = p.isPayer,
+                    debtReceivableId = p.debtReceivableId
+                )
+            }
+
+            if (localParticipants.isNotEmpty()) {
+                participantDao.insertAll(localParticipants)
             }
         }
     }

@@ -60,7 +60,13 @@ class SplitBillViewModel @Inject constructor(
         viewModelScope.launch {
             _listUiState.value = SplitBillListUiState.Loading
             try {
-                val userId = authRepository.getCurrentUser()?.id ?: "local_test_user_id"
+                val currentUser = authRepository.getCurrentUser()
+                val userId = currentUser?.id ?: "local_test_user_id"
+
+                if (currentUser != null && currentUser.id.isNotBlank() && currentUser.id != "local_test_user_id") {
+                    splitBillRepository.syncRemoteSplitBills(currentUser.id)
+                }
+
                 splitBillRepository.observeAll(userId)
                     .catch { e ->
                         _listUiState.value = SplitBillListUiState.Error(
@@ -98,7 +104,6 @@ class SplitBillViewModel @Inject constructor(
 
     fun removeParticipant(name: String) {
         _participants.value = _participants.value.filter { it != name }
-        // Reset payer jika yang dihapus adalah payer
         if (_payerName.value == name) {
             _payerName.value = ""
         }
@@ -110,10 +115,6 @@ class SplitBillViewModel @Inject constructor(
 
     // ===== CALCULATION =====
 
-    /**
-     * Memvalidasi input dan menghitung equal split.
-     * Jika valid, state berubah ke Calculated dengan data preview.
-     */
     fun calculate() {
         val titleVal = _title.value.trim()
         val amount = _totalAmount.value
@@ -149,7 +150,6 @@ class SplitBillViewModel @Inject constructor(
         val baseShare = amount / count
         val remainder = amount % count
 
-        // Payer mendapat (baseShare + remainder) agar total konsisten
         val participantShares = parts.mapIndexed { index, name ->
             val share = if (name == payer) baseShare + remainder else baseShare
             ParticipantShare(
@@ -159,7 +159,6 @@ class SplitBillViewModel @Inject constructor(
             )
         }
 
-        // Settlement: setiap non-payer berutang shareAmount kepada payer
         val settlements = participantShares
             .filter { !it.isPayer }
             .map { p ->
@@ -267,4 +266,3 @@ class SplitBillViewModel @Inject constructor(
         }
     }
 }
-

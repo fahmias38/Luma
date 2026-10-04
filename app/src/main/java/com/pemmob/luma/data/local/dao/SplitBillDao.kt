@@ -22,6 +22,9 @@ interface SplitBillDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: SplitBillEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(entities: List<SplitBillEntity>): List<Long>
+
     @Query("DELETE FROM split_bills WHERE id = :id")
     suspend fun deleteById(id: String): Int
 }

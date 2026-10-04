@@ -10,16 +10,6 @@ interface SplitBillRepository {
     fun observeById(id: String): Flow<SplitBillEntity?>
     fun observeParticipants(splitBillId: String): Flow<List<SplitBillParticipantEntity>>
 
-    /**
-     * Menyimpan Split Bill secara atomik:
-     * 1. Insert SplitBillEntity ke Room + Supabase
-     * 2. Hitung equal share per participant
-     *    - Remainder diberikan ke participant pertama (non-payer) untuk menjaga total konsisten
-     * 3. Insert semua SplitBillParticipantEntity
-     * 4. Untuk setiap non-payer participant, otomatis buat DebtReceivableEntity
-     *    dengan source = "SPLIT_BILL" dan link ke split bill ini
-     * 5. Return splitBillId jika berhasil
-     */
     suspend fun createSplitBill(
         userId: String,
         title: String,
@@ -30,4 +20,5 @@ interface SplitBillRepository {
     ): Result<String>
 
     suspend fun deleteSplitBill(id: String): Result<Unit>
+    suspend fun syncRemoteSplitBills(userId: String): Result<Unit> = Result.success(Unit)
 }
