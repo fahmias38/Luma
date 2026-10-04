@@ -40,6 +40,10 @@ fun AddPaymentScreen(
     val addPaymentUiState by viewModel.addPaymentUiState.collectAsStateWithLifecycle()
     val detailUiState by viewModel.detailUiState.collectAsStateWithLifecycle()
 
+    LaunchedEffect(debtId) {
+        viewModel.loadDetail(debtId)
+    }
+
     // Ambil remaining amount dari detail state
     val remainingAmount = remember(detailUiState) {
         if (detailUiState is DebtDetailUiState.Success) {

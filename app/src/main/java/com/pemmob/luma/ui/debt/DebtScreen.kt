@@ -1,6 +1,5 @@
 package com.pemmob.luma.ui.debt
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,7 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.automirrored.filled.CallSplit
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material3.*
@@ -46,6 +45,7 @@ fun DebtScreen(
 ) {
     val uiState by viewModel.listUiState.collectAsStateWithLifecycle()
     val currentFilter by viewModel.currentFilter.collectAsStateWithLifecycle()
+    val statusFilter by viewModel.statusFilter.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -108,10 +108,12 @@ fun DebtScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // Filter Tabs
-            DebtFilterTabs(
+            // 1 Baris 2 Tombol Dropdown (Kiri: Type, Kanan: Status)
+            DebtFiltersRow(
                 currentFilter = currentFilter,
-                onFilterChange = { viewModel.setFilter(it) }
+                onFilterChange = { viewModel.setFilter(it) },
+                currentStatusFilter = statusFilter,
+                onStatusFilterChange = { viewModel.setStatusFilter(it) }
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -133,10 +135,16 @@ fun DebtScreen(
                     }
                 }
                 is DebtListUiState.Success -> {
-                    val displayedItems = when (currentFilter) {
+                    val typeFiltered = when (currentFilter) {
                         DebtFilter.ALL -> state.allItems
                         DebtFilter.DEBT -> state.debtItems
                         DebtFilter.RECEIVABLE -> state.receivableItems
+                    }
+
+                    val displayedItems = when (statusFilter) {
+                        DebtStatusFilter.ALL -> typeFiltered
+                        DebtStatusFilter.PAID -> typeFiltered.filter { it.status == "PAID" }
+                        DebtStatusFilter.UNPAID -> typeFiltered.filter { it.status != "PAID" }
                     }
 
                     if (displayedItems.isEmpty()) {
@@ -176,6 +184,111 @@ fun DebtScreen(
 }
 
 @Composable
+private fun DebtFiltersRow(
+    currentFilter: DebtFilter,
+    onFilterChange: (DebtFilter) -> Unit,
+    currentStatusFilter: DebtStatusFilter,
+    onStatusFilterChange: (DebtStatusFilter) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Left Dropdown: Type (Semua, Utang, Piutang)
+        Box(modifier = Modifier.weight(1f)) {
+            var expandedType by remember { mutableStateOf(false) }
+            val typeLabel = when (currentFilter) {
+                DebtFilter.ALL -> "Semua"
+                DebtFilter.DEBT -> "Utang"
+                DebtFilter.RECEIVABLE -> "Piutang"
+            }
+            Surface(
+                onClick = { expandedType = true },
+                shape = RoundedCornerShape(20.dp),
+                color = if (currentFilter != DebtFilter.ALL) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(36.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = typeLabel,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = if (currentFilter != DebtFilter.ALL) Color.White else MaterialTheme.colorScheme.onSurface
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = null,
+                        tint = if (currentFilter != DebtFilter.ALL) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            DropdownMenu(
+                expanded = expandedType,
+                onDismissRequest = { expandedType = false }
+            ) {
+                DropdownMenuItem(text = { Text("Semua") }, onClick = { onFilterChange(DebtFilter.ALL); expandedType = false })
+                DropdownMenuItem(text = { Text("Utang") }, onClick = { onFilterChange(DebtFilter.DEBT); expandedType = false })
+                DropdownMenuItem(text = { Text("Piutang") }, onClick = { onFilterChange(DebtFilter.RECEIVABLE); expandedType = false })
+            }
+        }
+
+        // Right Dropdown: Status (Semua Status, Belum Lunas, Sudah Lunas)
+        Box(modifier = Modifier.weight(1f)) {
+            var expandedStatus by remember { mutableStateOf(false) }
+            val statusLabel = when (currentStatusFilter) {
+                DebtStatusFilter.ALL -> "Semua Status"
+                DebtStatusFilter.UNPAID -> "Belum Lunas"
+                DebtStatusFilter.PAID -> "Sudah Lunas"
+            }
+            Surface(
+                onClick = { expandedStatus = true },
+                shape = RoundedCornerShape(20.dp),
+                color = if (currentStatusFilter != DebtStatusFilter.ALL) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(36.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = statusLabel,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = if (currentStatusFilter != DebtStatusFilter.ALL) Color.White else MaterialTheme.colorScheme.onSurface
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = null,
+                        tint = if (currentStatusFilter != DebtStatusFilter.ALL) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            DropdownMenu(
+                expanded = expandedStatus,
+                onDismissRequest = { expandedStatus = false }
+            ) {
+                DropdownMenuItem(text = { Text("Semua Status") }, onClick = { onStatusFilterChange(DebtStatusFilter.ALL); expandedStatus = false })
+                DropdownMenuItem(text = { Text("Belum Lunas") }, onClick = { onStatusFilterChange(DebtStatusFilter.UNPAID); expandedStatus = false })
+                DropdownMenuItem(text = { Text("Sudah Lunas") }, onClick = { onStatusFilterChange(DebtStatusFilter.PAID); expandedStatus = false })
+            }
+        }
+    }
+}
+
+@Composable
 private fun DebtSummaryCards(
     totalDebt: Long,
     totalReceivable: Long
@@ -185,10 +298,10 @@ private fun DebtSummaryCards(
     }
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = SakuCardBackground),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(1.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -226,7 +339,7 @@ private fun SummaryCard(
         maximumFractionDigits = 0
     }
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+        colors = CardDefaults.cardColors(containerColor = SakuInputBackground),
         shape = RoundedCornerShape(16.dp),
         modifier = modifier
     ) {
@@ -234,7 +347,7 @@ private fun SummaryCard(
             Text(
                 text = label,
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = SakuTextMuted,
                 fontWeight = FontWeight.Medium
             )
             Spacer(modifier = Modifier.height(6.dp))
@@ -244,52 +357,6 @@ private fun SummaryCard(
                 fontWeight = FontWeight.Bold,
                 color = amountColor
             )
-        }
-    }
-}
-
-@Composable
-private fun DebtFilterTabs(
-    currentFilter: DebtFilter,
-    onFilterChange: (DebtFilter) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        listOf(
-            DebtFilter.ALL to "Semua",
-            DebtFilter.DEBT to "Utang",
-            DebtFilter.RECEIVABLE to "Piutang"
-        ).forEach { (filter, label) ->
-            val selected = currentFilter == filter
-            val bgColor by animateColorAsState(
-                targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-                label = "filterBg"
-            )
-            val textColor by animateColorAsState(
-                targetValue = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                label = "filterText"
-            )
-            Surface(
-                onClick = { onFilterChange(filter) },
-                shape = RoundedCornerShape(24.dp),
-                color = bgColor,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
-                shadowElevation = if (selected) 2.dp else 0.dp,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(36.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = label,
-                        color = textColor,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 13.sp
-                    )
-                }
-            }
         }
     }
 }
@@ -313,10 +380,10 @@ fun DebtItemCard(
     val remainingAmount = (item.amount - item.paidAmount).coerceAtLeast(0L)
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = SakuCardBackground),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(1.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)

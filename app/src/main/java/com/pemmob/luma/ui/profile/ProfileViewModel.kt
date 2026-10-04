@@ -3,6 +3,8 @@ package com.pemmob.luma.ui.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pemmob.luma.domain.repository.AuthRepository
+import com.pemmob.luma.domain.repository.DebtReceivableRepository
+import com.pemmob.luma.domain.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,7 +15,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val transactionRepository: TransactionRepository,
+    private val debtReceivableRepository: DebtReceivableRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -27,6 +31,34 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             val user = authRepository.getCurrentUser()
+            val userId = user?.id ?: "local_test_user_id"
+
+            // Observe real-time stats from Transaction Repository
+            launch {
+                try {
+                    transactionRepository.getAllTransactions(userId).collect { transactions ->
+                        val totalTx = transactions.size
+                        val earliestDate = transactions.minOfOrNull { it.date } ?: System.currentTimeMillis()
+                        val diffMonths = ((System.currentTimeMillis() - earliestDate) / (1000L * 60 * 60 * 24 * 30)).toInt().coerceAtLeast(1)
+
+                        _uiState.update { it.copy(totalTransactions = totalTx, activeMonths = diffMonths) }
+                    }
+                } catch (_: Exception) {}
+            }
+
+            // Observe real-time stats from Debt & Receivable Repository
+            launch {
+                try {
+                    debtReceivableRepository.observeAll(userId).collect { debts ->
+                        val total = debts.size
+                        val paid = debts.count { it.status == "PAID" }
+                        val percentage = if (total == 0) 100 else (paid * 100) / total
+
+                        _uiState.update { it.copy(paidDebtPercentage = percentage) }
+                    }
+                } catch (_: Exception) {}
+            }
+
             _uiState.update {
                 it.copy(
                     user = user,

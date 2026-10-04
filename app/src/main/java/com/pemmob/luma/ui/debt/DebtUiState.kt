@@ -42,3 +42,7 @@ sealed interface AddPaymentUiState {
 enum class DebtFilter {
     ALL, DEBT, RECEIVABLE
 }
+
+enum class DebtStatusFilter {
+    ALL, PAID, UNPAID
+}

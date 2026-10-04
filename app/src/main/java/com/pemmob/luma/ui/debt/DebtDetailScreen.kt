@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -101,6 +103,11 @@ fun DebtDetailScreen(
                     payments = state.payments,
                     remainingAmount = state.remainingAmount,
                     onAddPayment = { onNavigateToAddPayment(debtId) },
+                    onDeleteDebt = {
+                        viewModel.deleteDebt(debtId) {
+                            onNavigateBack()
+                        }
+                    },
                     innerPadding = innerPadding
                 )
             }
@@ -114,6 +121,7 @@ private fun DebtDetailContent(
     payments: List<PaymentEntity>,
     remainingAmount: Long,
     onAddPayment: () -> Unit,
+    onDeleteDebt: () -> Unit,
     innerPadding: PaddingValues
 ) {
     val fmt = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("id-ID")).apply {
@@ -355,6 +363,106 @@ private fun DebtDetailContent(
             }
         }
 
+        // Tombol Hapus Utang/Piutang (Solid Red Background dengan Teks Putih)
+        item {
+            var showDeleteDialog by remember { mutableStateOf(false) }
+
+            Spacer(modifier = Modifier.height(4.dp))
+            Button(
+                onClick = { showDeleteDialog = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFDC2626),
+                    contentColor = Color.White
+                )
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.White)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Hapus Utang/Piutang", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
+            }
+
+            if (showDeleteDialog) {
+                AlertDialog(
+                    onDismissRequest = { showDeleteDialog = false },
+                    title = {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFFEE2E2)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = null,
+                                    tint = Color(0xFFEF4444),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text("Hapus Catatan Ini?", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = SakuTextDark)
+                        }
+                    },
+                    text = {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Catatan ${if (isReceivable) "piutang" else "utang"} dengan ${debt.personName} sebesar ${fmt.format(debt.amount)} akan dihapus secara permanen.",
+                                fontSize = 14.sp,
+                                color = SakuTextMuted,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = SakuInputBackground),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(debt.personName, fontWeight = FontWeight.Bold, color = SakuTextDark)
+                                    Text(fmt.format(debt.amount), fontWeight = FontWeight.Bold, color = Color(0xFFEF4444))
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                showDeleteDialog = false
+                                onDeleteDebt()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("Hapus", fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDeleteDialog = false }) {
+                            Text("Batal", color = SakuTextMuted)
+                        }
+                    },
+                    containerColor = SakuCardBackground,
+                    shape = RoundedCornerShape(24.dp)
+                )
+            }
+        }
+
         // Riwayat Pembayaran
         item {
             Spacer(modifier = Modifier.height(4.dp))
@@ -367,24 +475,39 @@ private fun DebtDetailContent(
         }
 
         if (payments.isEmpty()) {
-            item {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = SakuCardBackground),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        contentAlignment = Alignment.Center
+            if (debt.paidAmount > 0L) {
+                item {
+                    PaymentHistoryItem(
+                        payment = PaymentEntity(
+                            debtReceivableId = debt.id,
+                            amount = debt.paidAmount,
+                            paymentDate = debt.date,
+                            note = "Pembayaran Tercatat"
+                        ),
+                        fmt = fmt,
+                        dateFormat = dateFormat
+                    )
+                }
+            } else {
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = SakuCardBackground),
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(
-                            "Belum ada pembayaran.",
-                            color = SakuTextMuted,
-                            fontSize = 14.sp
-                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "Belum ada pembayaran.",
+                                color = SakuTextMuted,
+                                fontSize = 14.sp
+                            )
+                        }
                     }
                 }
             }

@@ -157,6 +157,9 @@ fun ProfileScreen(
             ProfileHeaderCard(
                 fullName = uiState.user?.fullName ?: "Fahmi Ramadhan",
                 email = uiState.user?.email ?: "fahmi.ramadhan@kampus.ac.id",
+                activeMonths = uiState.activeMonths,
+                totalTransactions = uiState.totalTransactions,
+                paidDebtPercentage = uiState.paidDebtPercentage,
                 onEditClick = { showEditProfileDialog = true }
             )
 
@@ -260,7 +263,7 @@ private fun ProfileTopAppBar(
     onNotificationClick: () -> Unit
 ) {
     Surface(
-        color = MaterialTheme.colorScheme.background,
+        color = Color(0xFFF8FAFC),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -274,7 +277,7 @@ private fun ProfileTopAppBar(
                 text = "Profil & Pengaturan",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
+                color = SakuTextDark
             )
 
             // Bell Notification Icon
@@ -288,7 +291,7 @@ private fun ProfileTopAppBar(
                 Icon(
                     imageVector = Icons.Default.Notifications,
                     contentDescription = "Notifikasi",
-                    tint = MaterialTheme.colorScheme.onBackground,
+                    tint = SakuTextDark,
                     modifier = Modifier.size(24.dp)
                 )
                 // Red badge dot
@@ -310,6 +313,9 @@ private fun ProfileTopAppBar(
 private fun ProfileHeaderCard(
     fullName: String,
     email: String,
+    activeMonths: Int,
+    totalTransactions: Int,
+    paidDebtPercentage: Int,
     onEditClick: () -> Unit
 ) {
     Card(
@@ -442,7 +448,7 @@ private fun ProfileHeaderCard(
                     Text(text = "Bulan Aktif", fontSize = 11.sp, color = SakuTextMuted)
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "6 Bulan",
+                        text = "$activeMonths Bulan",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = SakuPrimary
@@ -459,7 +465,7 @@ private fun ProfileHeaderCard(
                     Text(text = "Transaksi", fontSize = 11.sp, color = SakuTextMuted)
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "142",
+                        text = "$totalTransactions",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = SakuTextDark
@@ -477,7 +483,7 @@ private fun ProfileHeaderCard(
                     Spacer(modifier = Modifier.height(2.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "98%",
+                            text = "$paidDebtPercentage%",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF16A34A)

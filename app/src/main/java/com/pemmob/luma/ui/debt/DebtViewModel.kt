@@ -26,6 +26,9 @@ class DebtViewModel @Inject constructor(
     private val _currentFilter = MutableStateFlow(DebtFilter.ALL)
     val currentFilter: StateFlow<DebtFilter> = _currentFilter.asStateFlow()
 
+    private val _statusFilter = MutableStateFlow(DebtStatusFilter.ALL)
+    val statusFilter: StateFlow<DebtStatusFilter> = _statusFilter.asStateFlow()
+
     // ===== DETAIL STATE =====
     private val _detailUiState = MutableStateFlow<DebtDetailUiState>(DebtDetailUiState.Loading)
     val detailUiState: StateFlow<DebtDetailUiState> = _detailUiState.asStateFlow()
@@ -48,6 +51,10 @@ class DebtViewModel @Inject constructor(
 
     fun setFilter(filter: DebtFilter) {
         _currentFilter.value = filter
+    }
+
+    fun setStatusFilter(filter: DebtStatusFilter) {
+        _statusFilter.value = filter
     }
 
     fun loadList() {
@@ -192,5 +199,14 @@ class DebtViewModel @Inject constructor(
 
     fun resetPaymentState() {
         _addPaymentUiState.value = AddPaymentUiState.Idle
+    }
+
+    fun deleteDebt(debtId: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                debtRepository.deleteDebt(debtId)
+                    .onSuccess { onSuccess() }
+            } catch (_: Exception) {}
+        }
     }
 }
