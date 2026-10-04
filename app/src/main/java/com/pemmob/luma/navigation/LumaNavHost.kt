@@ -55,6 +55,7 @@ import com.pemmob.luma.ui.debt.DebtScreen
 import com.pemmob.luma.ui.profile.ProfileRoute
 import com.pemmob.luma.ui.splitbill.SplitBillScreen
 import com.pemmob.luma.ui.statistics.StatisticsContent
+import com.pemmob.luma.ui.notification.NotificationContent
 import com.pemmob.luma.ui.theme.SakuCardBackground
 import com.pemmob.luma.ui.theme.SakuTextMuted
 import com.pemmob.luma.ui.transaction.TransactionScreen
@@ -96,20 +97,22 @@ fun LumaNavHost(
         currentDestination?.hasRoute(routeClass) == true
     }
 
+    val navigateToTab: (Any) -> Unit = { route ->
+        navController.navigate(route) {
+            popUpTo(DashboardPlaceholderRoute) {
+                saveState = true
+            }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
     Scaffold(
         bottomBar = {
             if (showBottomBar) {
                 LumaBottomNavigationBar(
                     currentDestination = currentDestination,
-                    onNavigate = { route ->
-                        navController.navigate(route) {
-                            popUpTo(DashboardPlaceholderRoute) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }
+                    onNavigate = navigateToTab
                 )
             }
         }
@@ -165,11 +168,12 @@ fun LumaNavHost(
                 // Dashboard
                 composable<DashboardPlaceholderRoute> {
                     DashboardRoute(
-                        onAddTransactionClick = { navController.navigate(TransactionRoute) },
-                        onSeeAllTransactionsClick = { navController.navigate(TransactionRoute) },
-                        onDebtClick = { navController.navigate(DebtRoute) },
+                        onAddTransactionClick = { navigateToTab(TransactionRoute) },
+                        onSeeAllTransactionsClick = { navigateToTab(TransactionRoute) },
+                        onDebtClick = { navigateToTab(DebtRoute) },
                         onSplitBillClick = { navController.navigate(SplitBillRoute) },
-                        onStatisticsClick = { navController.navigate(StatisticsRoute) }
+                        onStatisticsClick = { navController.navigate(StatisticsRoute) },
+                        onNotificationClick = { navController.navigate(NotificationRoute) }
                     )
                 }
 
@@ -234,6 +238,14 @@ fun LumaNavHost(
 
                 composable<StatisticsRoute> {
                     StatisticsContent(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                // ===== NOTIFICATION =====
+
+                composable<NotificationRoute> {
+                    NotificationContent(
                         onNavigateBack = { navController.popBackStack() }
                     )
                 }
