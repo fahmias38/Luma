@@ -20,14 +20,14 @@ class DashboardRepositoryImpl @Inject constructor(
     private val debtReceivableRepository: DebtReceivableRepository
 ) : DashboardRepository {
 
-    override fun getDashboardData(): Flow<DashboardData> {
+    override fun getDashboardData(filter: DashboardFilter): Flow<DashboardData> {
         return flow {
             val user = authRepository.getCurrentUser()
             if (user == null) {
                 emit(getEmptyDashboardData())
                 return@flow
             }
-            
+
             val userId = user.id
             val userName = user.fullName ?: user.email.substringBefore("@")
 
@@ -35,59 +35,125 @@ class DashboardRepositoryImpl @Inject constructor(
             runCatching { transactionRepository.syncRemoteTransactions(userId) }
             runCatching { debtReceivableRepository.syncRemoteDebts(userId) }
 
-            // Observe Transactions and Debts dari Room DB
             val allTransactionsFlow = transactionRepository.getAllTransactions(userId)
             val debtsFlow = debtReceivableRepository.observeByType(userId, "DEBT")
             val receivablesFlow = debtReceivableRepository.observeByType(userId, "RECEIVABLE")
+            val paymentsFlow = debtReceivableRepository.observeAllPayments(userId)
 
             combine(
                 allTransactionsFlow,
                 debtsFlow,
-                receivablesFlow
-            ) { transactions, debts, receivables ->
-                
+                receivablesFlow,
+                paymentsFlow
+            ) { transactions, debts, receivables, payments ->
+
                 val currentCalendar = Calendar.getInstance()
                 val currentMonth = currentCalendar.get(Calendar.MONTH)
                 val currentYear = currentCalendar.get(Calendar.YEAR)
-                
+
                 val formatter = SimpleDateFormat("MMMM yyyy", Locale.forLanguageTag("id-ID"))
                 val monthYear = formatter.format(Date())
 
+                // =============================================
+                // SALDO: All-time, dipengaruhi utang/piutang
+                // =============================================
                 val totalIncomeAllTime = transactions.filter { it.type == "INCOME" }.sumOf { it.amount }
                 val totalExpenseAllTime = transactions.filter { it.type == "EXPENSE" }.sumOf { it.amount }
-                val balance = (totalIncomeAllTime - totalExpenseAllTime).toDouble()
 
-                val currentMonthTransactions = transactions.filter {
-                    val txCalendar = Calendar.getInstance().apply { timeInMillis = it.date }
-                    txCalendar.get(Calendar.MONTH) == currentMonth && txCalendar.get(Calendar.YEAR) == currentYear
+                // Piutang: uang sudah keluar (KURANGI saldo) saat dibuat, kembali (TAMBAH) saat dilunasi
+                // Utang: tidak berubah saldo saat dibuat, berkurang (KURANGI) saat membayar
+                val totalPaidDebt = payments
+                    .filter { payment -> debts.any { it.id == payment.debtReceivableId } }
+                    .sumOf { it.amount }
+                val totalPaidReceivable = payments
+                    .filter { payment -> receivables.any { it.id == payment.debtReceivableId } }
+                    .sumOf { it.amount }
+
+                // Saldo total = income - expense - piutang_keluar + piutang_masuk - bayar_utang
+                val totalReceivableOut = receivables.sumOf { it.amount }   // piutang dikeluarkan
+                val balance = (totalIncomeAllTime - totalExpenseAllTime
+                        - totalPaidDebt                                     // bayar utang mengurangi saldo
+                        - totalReceivableOut                                // piutang keluar mengurangi saldo
+                        + totalPaidReceivable).toDouble()                   // piutang masuk menambah saldo
+
+                // =============================================
+                // FILTER: Income/Expense/Category sesuai filter
+                // =============================================
+                val filteredTransactions = when (filter) {
+                    DashboardFilter.MONTH -> transactions.filter {
+                        val cal = Calendar.getInstance().apply { timeInMillis = it.date }
+                        cal.get(Calendar.MONTH) == currentMonth && cal.get(Calendar.YEAR) == currentYear
+                    }
+                    DashboardFilter.ALL -> transactions
                 }
-                
-                val currentMonthIncome = currentMonthTransactions.filter { it.type == "INCOME" }.sumOf { it.amount }.toDouble()
-                val currentMonthExpense = currentMonthTransactions.filter { it.type == "EXPENSE" }.sumOf { it.amount }.toDouble()
 
+                val filteredIncome = filteredTransactions.filter { it.type == "INCOME" }.sumOf { it.amount }.toDouble()
+                val filteredExpense = filteredTransactions.filter { it.type == "EXPENSE" }.sumOf { it.amount }.toDouble()
+
+                // =============================================
+                // TOP 3 KATEGORI (termasuk "Utang" dan "Piutang")
+                // =============================================
+                val expenseByCategory = filteredTransactions
+                    .filter { it.type == "EXPENSE" }
+                    .groupBy { it.category }
+                    .mapValues { entry -> entry.value.sumOf { it.amount }.toDouble() }
+                    .toMutableMap()
+
+                // Tambahkan "Utang" (pembayaran utang) dan "Piutang" (uang keluar) sebagai kategori
+                val filteredPaidDebt = when (filter) {
+                    DashboardFilter.MONTH -> payments
+                        .filter { payment ->
+                            debts.any { it.id == payment.debtReceivableId } &&
+                            run {
+                                val cal = Calendar.getInstance().apply { timeInMillis = payment.paymentDate }
+                                cal.get(Calendar.MONTH) == currentMonth && cal.get(Calendar.YEAR) == currentYear
+                            }
+                        }.sumOf { it.amount }.toDouble()
+                    DashboardFilter.ALL -> totalPaidDebt.toDouble()
+                }
+
+                val filteredReceivableOut = when (filter) {
+                    DashboardFilter.MONTH -> receivables.filter {
+                        val cal = Calendar.getInstance().apply { timeInMillis = it.date }
+                        cal.get(Calendar.MONTH) == currentMonth && cal.get(Calendar.YEAR) == currentYear
+                    }.sumOf { it.amount }.toDouble()
+                    DashboardFilter.ALL -> totalReceivableOut.toDouble()
+                }
+
+                if (filteredPaidDebt > 0) expenseByCategory["Utang"] = filteredPaidDebt
+                if (filteredReceivableOut > 0) expenseByCategory["Piutang"] = filteredReceivableOut
+
+                val totalFilteredExpenseForChart = expenseByCategory.values.sum()
+
+                val topCategories = expenseByCategory.entries
+                    .sortedByDescending { it.value }
+                    .take(3)
+                    .map { (name, amount) ->
+                        CategoryData(
+                            name = name,
+                            amount = amount,
+                            percentage = if (totalFilteredExpenseForChart > 0) {
+                                ((amount / totalFilteredExpenseForChart) * 100).toInt()
+                            } else 0
+                        )
+                    }
+
+                // =============================================
+                // DEBT SUMMARY (tetap all-status untuk card catatan teman)
+                // =============================================
                 val unpaidDebts = debts.filter { it.status == "UNPAID" }
                 val totalDebt = unpaidDebts.sumOf { it.amount - it.paidAmount }.toDouble()
                 val pendingDebtCount = unpaidDebts.size
-                
+
                 val unpaidReceivables = receivables.filter { it.status == "UNPAID" }
                 val totalReceivable = unpaidReceivables.sumOf { it.amount - it.paidAmount }.toDouble()
                 val pendingReceivableCount = unpaidReceivables.size
 
-                val expenseByCategory = currentMonthTransactions
-                    .filter { it.type == "EXPENSE" }
-                    .groupBy { it.category }
-                    .mapValues { entry -> entry.value.sumOf { it.amount } }
-                
-                val topCategoryEntry = expenseByCategory.maxByOrNull { it.value }
-                val topCategoryName = topCategoryEntry?.key ?: "Belum ada"
-                val topCategoryPercentage = if (currentMonthExpense > 0 && topCategoryEntry != null) {
-                    ((topCategoryEntry.value / currentMonthExpense) * 100).toInt()
-                } else {
-                    0
-                }
-
+                // =============================================
+                // RECENT TRANSACTIONS (filtered)
+                // =============================================
                 val dateFormat = SimpleDateFormat("dd MMM", Locale.forLanguageTag("id-ID"))
-                val recentTransactions = transactions
+                val recentTransactions = filteredTransactions
                     .sortedByDescending { it.date }
                     .take(4)
                     .map { tx ->
@@ -106,22 +172,22 @@ class DashboardRepositoryImpl @Inject constructor(
                     userName = userName,
                     monthYear = monthYear,
                     balance = balance,
-                    income = currentMonthIncome,
-                    expense = currentMonthExpense,
+                    income = filteredIncome,
+                    expense = filteredExpense,
                     debt = totalDebt,
                     receivable = totalReceivable,
                     pendingDebtCount = pendingDebtCount,
                     pendingReceivableCount = pendingReceivableCount,
-                    topCategoryName = topCategoryName,
-                    topCategoryPercentage = topCategoryPercentage,
-                    recentTransactions = recentTransactions
+                    topCategories = topCategories,
+                    recentTransactions = recentTransactions,
+                    hasNotification = pendingDebtCount > 0 || pendingReceivableCount > 0
                 )
             }.collect {
                 emit(it)
             }
         }
     }
-    
+
     private fun getEmptyDashboardData() = DashboardData(
         userName = "Pengguna",
         monthYear = "",
@@ -132,8 +198,8 @@ class DashboardRepositoryImpl @Inject constructor(
         receivable = 0.0,
         pendingDebtCount = 0,
         pendingReceivableCount = 0,
-        topCategoryName = "-",
-        topCategoryPercentage = 0,
-        recentTransactions = emptyList()
+        topCategories = emptyList(),
+        recentTransactions = emptyList(),
+        hasNotification = false
     )
 }

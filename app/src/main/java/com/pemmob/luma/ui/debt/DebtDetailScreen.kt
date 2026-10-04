@@ -26,11 +26,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pemmob.luma.data.local.entity.DebtReceivableEntity
 import com.pemmob.luma.data.local.entity.PaymentEntity
-import com.pemmob.luma.ui.theme.SakuCanvasBackground
-import com.pemmob.luma.ui.theme.SakuCardBackground
-import com.pemmob.luma.ui.theme.SakuInputBackground
-import com.pemmob.luma.ui.theme.SakuTextDark
-import com.pemmob.luma.ui.theme.SakuTextMuted
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -57,7 +52,7 @@ fun DebtDetailScreen(
                         "Detail Utang/Piutang",
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp,
-                        color = SakuTextDark
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 navigationIcon = {
@@ -66,11 +61,11 @@ fun DebtDetailScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = SakuCanvasBackground
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         },
-        containerColor = SakuCanvasBackground
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         when (val state = detailUiState) {
             is DebtDetailUiState.Loading -> {
@@ -146,10 +141,10 @@ private fun DebtDetailContent(
         item {
             Spacer(modifier = Modifier.height(4.dp))
             Card(
-                colors = CardDefaults.cardColors(containerColor = SakuCardBackground),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(24.dp),
                 elevation = CardDefaults.cardElevation(2.dp),
-                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
@@ -175,7 +170,7 @@ private fun DebtDetailContent(
                                 text = debt.personName,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 20.sp,
-                                color = SakuTextDark
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -212,7 +207,7 @@ private fun DebtDetailContent(
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
-                    HorizontalDivider(color = Color(0xFFF1F5F9))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     Spacer(modifier = Modifier.height(20.dp))
 
                     // Nominal info
@@ -220,7 +215,7 @@ private fun DebtDetailContent(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        AmountInfoColumn(label = "Total Kewajiban", value = fmt.format(debt.amount), valueColor = SakuTextDark)
+                        AmountInfoColumn(label = "Total Kewajiban", value = fmt.format(debt.amount), valueColor = MaterialTheme.colorScheme.onSurface)
                         AmountInfoColumn(label = "Sudah Dibayar", value = fmt.format(debt.paidAmount), valueColor = MaterialTheme.colorScheme.secondary)
                         AmountInfoColumn(label = "Sisa", value = fmt.format(remainingAmount), valueColor = typeColor)
                     }
@@ -234,12 +229,12 @@ private fun DebtDetailContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text("Tanggal", fontSize = 12.sp, color = SakuTextMuted)
+                            Text("Tanggal", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(
                                 text = dateFormat.format(Date(debt.date)),
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 13.sp,
-                                color = SakuTextDark
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                         Row(
@@ -263,14 +258,14 @@ private fun DebtDetailContent(
 
                     if (debt.description.isNotBlank()) {
                         Spacer(modifier = Modifier.height(12.dp))
-                        HorizontalDivider(color = Color(0xFFF1F5F9))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         Spacer(modifier = Modifier.height(12.dp))
-                        Text("Catatan", fontSize = 12.sp, color = SakuTextMuted)
+                        Text("Catatan", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = debt.description,
                             fontSize = 14.sp,
-                            color = SakuTextDark,
+                            color = MaterialTheme.colorScheme.onSurface,
                             lineHeight = 20.sp
                         )
                     }
@@ -282,10 +277,10 @@ private fun DebtDetailContent(
         item {
             val progress = if (debt.amount > 0) debt.paidAmount.toFloat() / debt.amount.toFloat() else 0f
             Card(
-                colors = CardDefaults.cardColors(containerColor = SakuCardBackground),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(20.dp),
                 elevation = CardDefaults.cardElevation(1.dp),
-                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
@@ -293,7 +288,7 @@ private fun DebtDetailContent(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Progres Pembayaran", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = SakuTextDark)
+                        Text("Progres Pembayaran", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                         Text(
                             "${(progress * 100).toInt()}%",
                             fontWeight = FontWeight.Bold,
@@ -309,7 +304,7 @@ private fun DebtDetailContent(
                             .height(8.dp)
                             .clip(RoundedCornerShape(4.dp)),
                         color = if (isPaid) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
-                        trackColor = SakuInputBackground
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 }
             }
@@ -407,7 +402,7 @@ private fun DebtDetailContent(
                                 )
                             }
                             Spacer(modifier = Modifier.height(12.dp))
-                            Text("Hapus Catatan Ini?", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = SakuTextDark)
+                            Text("Hapus Catatan Ini?", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                     },
                     text = {
@@ -418,12 +413,12 @@ private fun DebtDetailContent(
                             Text(
                                 text = "Catatan ${if (isReceivable) "piutang" else "utang"} dengan ${debt.personName} sebesar ${fmt.format(debt.amount)} akan dihapus secara permanen.",
                                 fontSize = 14.sp,
-                                color = SakuTextMuted,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center
                             )
                             Spacer(modifier = Modifier.height(14.dp))
                             Card(
-                                colors = CardDefaults.cardColors(containerColor = SakuInputBackground),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
@@ -434,7 +429,7 @@ private fun DebtDetailContent(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(debt.personName, fontWeight = FontWeight.Bold, color = SakuTextDark)
+                                    Text(debt.personName, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                                     Text(fmt.format(debt.amount), fontWeight = FontWeight.Bold, color = Color(0xFFEF4444))
                                 }
                             }
@@ -454,10 +449,10 @@ private fun DebtDetailContent(
                     },
                     dismissButton = {
                         TextButton(onClick = { showDeleteDialog = false }) {
-                            Text("Batal", color = SakuTextMuted)
+                            Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     },
-                    containerColor = SakuCardBackground,
+                    containerColor = MaterialTheme.colorScheme.surface,
                     shape = RoundedCornerShape(24.dp)
                 )
             }
@@ -470,7 +465,7 @@ private fun DebtDetailContent(
                 "Riwayat Pembayaran",
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
-                color = SakuTextDark
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
 
@@ -491,9 +486,9 @@ private fun DebtDetailContent(
             } else {
                 item {
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = SakuCardBackground),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Box(
@@ -504,7 +499,7 @@ private fun DebtDetailContent(
                         ) {
                             Text(
                                 "Belum ada pembayaran.",
-                                color = SakuTextMuted,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 14.sp
                             )
                         }
@@ -526,7 +521,7 @@ private fun AmountInfoColumn(
     valueColor: Color
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, fontSize = 11.sp, color = SakuTextMuted)
+        Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             value,
@@ -544,10 +539,10 @@ private fun PaymentHistoryItem(
     dateFormat: SimpleDateFormat
 ) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = SakuCardBackground),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(1.dp),
-        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -562,13 +557,13 @@ private fun PaymentHistoryItem(
                     text = dateFormat.format(Date(payment.paymentDate)),
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp,
-                    color = SakuTextDark
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 if (payment.note.isNotBlank()) {
                     Text(
                         text = payment.note,
                         fontSize = 12.sp,
-                        color = SakuTextMuted
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

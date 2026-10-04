@@ -9,6 +9,7 @@ interface DebtReceivableRepository {
     fun observeByType(userId: String, type: String): Flow<List<DebtReceivableEntity>>
     fun observeById(id: String): Flow<DebtReceivableEntity?>
     fun observePayments(debtId: String): Flow<List<PaymentEntity>>
+    fun observeAllPayments(userId: String): Flow<List<PaymentEntity>>
     fun observeBySplitBillId(splitBillId: String): Flow<List<DebtReceivableEntity>>
 
     suspend fun insertDebt(entity: DebtReceivableEntity): Result<String>

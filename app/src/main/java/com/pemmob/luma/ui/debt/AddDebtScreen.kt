@@ -23,11 +23,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.pemmob.luma.ui.theme.SakuCanvasBackground
-import com.pemmob.luma.ui.theme.SakuCardBackground
-import com.pemmob.luma.ui.theme.SakuInputBackground
-import com.pemmob.luma.ui.theme.SakuTextDark
-import com.pemmob.luma.ui.theme.SakuTextMuted
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -53,6 +48,7 @@ fun AddDebtScreen(
     val calendar = Calendar.getInstance().apply { timeInMillis = date }
     val datePickerDialog = DatePickerDialog(
         context,
+        com.pemmob.luma.R.style.LumaDatePickerTheme,
         { _, year, month, day ->
             calendar.set(year, month, day)
             date = calendar.timeInMillis
@@ -78,7 +74,7 @@ fun AddDebtScreen(
                         "Tambah Utang/Piutang",
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp,
-                        color = SakuTextDark
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 navigationIcon = {
@@ -87,11 +83,11 @@ fun AddDebtScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = SakuCanvasBackground
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         },
-        containerColor = SakuCanvasBackground
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -108,7 +104,7 @@ fun AddDebtScreen(
                 text = "Tipe",
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 14.sp,
-                color = SakuTextDark
+                color = MaterialTheme.colorScheme.onSurface
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -140,7 +136,7 @@ fun AddDebtScreen(
                     nameError = null
                 },
                 label = { Text("Nama") },
-                placeholder = { Text("Contoh: Fahri", color = SakuTextMuted) },
+                placeholder = { Text("Contoh: Fahri", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 isError = nameError != null,
                 supportingText = nameError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
                 singleLine = true,
@@ -157,7 +153,7 @@ fun AddDebtScreen(
                     amountError = null
                 },
                 label = { Text("Nominal (Rp)") },
-                placeholder = { Text("Contoh: 50000", color = SakuTextMuted) },
+                placeholder = { Text("Contoh: 50000", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 isError = amountError != null,
                 supportingText = amountError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -172,7 +168,7 @@ fun AddDebtScreen(
                 value = description,
                 onValueChange = { description = it },
                 label = { Text("Catatan (Opsional)") },
-                placeholder = { Text("Contoh: Pinjam uang untuk tugas", color = SakuTextMuted) },
+                placeholder = { Text("Contoh: Pinjam uang untuk tugas", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 maxLines = 3,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
@@ -280,8 +276,8 @@ private fun DebtTypeButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val bgColor = if (selected) color.copy(alpha = 0.12f) else SakuCardBackground
-    val borderColor = if (selected) color else Color(0xFFE2E8F0)
+    val bgColor = if (selected) color.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface
+    val borderColor = if (selected) color else MaterialTheme.colorScheme.outlineVariant
 
     Card(
         colors = CardDefaults.cardColors(containerColor = bgColor),
@@ -297,12 +293,12 @@ private fun DebtTypeButton(
                 text = label,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
-                color = if (selected) color else SakuTextDark
+                color = if (selected) color else MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = subtitle,
                 fontSize = 11.sp,
-                color = SakuTextMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 15.sp
             )
         }
@@ -311,9 +307,9 @@ private fun DebtTypeButton(
 
 @Composable
 fun outlinedFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedContainerColor = SakuInputBackground,
-    unfocusedContainerColor = SakuInputBackground,
-    disabledContainerColor = SakuInputBackground,
+    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
     focusedBorderColor = Color(0xFF4338CA),
-    unfocusedBorderColor = Color(0xFFCBD5E1)
+    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
 )

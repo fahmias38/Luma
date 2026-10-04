@@ -39,11 +39,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pemmob.luma.ui.debt.outlinedFieldColors
-import com.pemmob.luma.ui.theme.SakuCanvasBackground
-import com.pemmob.luma.ui.theme.SakuCardBackground
-import com.pemmob.luma.ui.theme.SakuInputBackground
-import com.pemmob.luma.ui.theme.SakuTextDark
-import com.pemmob.luma.ui.theme.SakuTextMuted
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -83,12 +78,12 @@ fun SplitBillScreen(
                             "Buat Split Bill",
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
-                            color = SakuTextDark
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             "Langkah $currentStep dari 4",
                             fontSize = 12.sp,
-                            color = SakuTextMuted
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 },
@@ -100,11 +95,11 @@ fun SplitBillScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = SakuCanvasBackground
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         },
-        containerColor = SakuCanvasBackground
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -189,7 +184,7 @@ private fun StepIndicator(currentStep: Int, totalSteps: Int) {
             val color = when {
                 isCompleted -> MaterialTheme.colorScheme.primary
                 isCurrent -> MaterialTheme.colorScheme.primary
-                else -> Color(0xFFE2E8F0)
+                else -> MaterialTheme.colorScheme.outlineVariant
             }
             Box(
                 modifier = Modifier
@@ -230,6 +225,7 @@ private fun StepOneSetup(
     val calendar = Calendar.getInstance().apply { timeInMillis = selectedDate }
     val datePickerDialog = DatePickerDialog(
         context,
+        com.pemmob.luma.R.style.LumaDatePickerTheme,
         { _, year, month, day ->
             calendar.set(year, month, day)
             onDateChange(calendar.timeInMillis)
@@ -252,7 +248,7 @@ private fun StepOneSetup(
             "Detail Tagihan",
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
-            color = SakuTextDark
+            color = MaterialTheme.colorScheme.onSurface
         )
 
         // Judul
@@ -260,7 +256,7 @@ private fun StepOneSetup(
             value = title,
             onValueChange = { onTitleChange(it); onClearError() },
             label = { Text("Nama / Judul") },
-            placeholder = { Text("Contoh: Makan Bareng", color = SakuTextMuted) },
+            placeholder = { Text("Contoh: Makan Bareng", color = MaterialTheme.colorScheme.onSurfaceVariant) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
@@ -299,13 +295,13 @@ private fun StepOneSetup(
             colors = outlinedFieldColors()
         )
 
-        HorizontalDivider(color = Color(0xFFF1F5F9))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
         Text(
             "Peserta (${participants.size})",
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
-            color = SakuTextDark
+            color = MaterialTheme.colorScheme.onSurface
         )
 
         // Add participant
@@ -317,7 +313,7 @@ private fun StepOneSetup(
             OutlinedTextField(
                 value = newParticipant,
                 onValueChange = { newParticipant = it; onClearError() },
-                placeholder = { Text("Nama peserta", color = SakuTextMuted) },
+                placeholder = { Text("Nama peserta", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 singleLine = true,
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(14.dp),
@@ -358,9 +354,9 @@ private fun StepOneSetup(
         // Participant chips
         if (participants.isNotEmpty()) {
             Card(
-                colors = CardDefaults.cardColors(containerColor = SakuCardBackground),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -392,14 +388,14 @@ private fun StepOneSetup(
                                     text = name,
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 14.sp,
-                                    color = SakuTextDark
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
                             IconButton(onClick = { onRemoveParticipant(name) }) {
                                 Icon(
                                     Icons.Default.Close,
                                     contentDescription = "Hapus",
-                                    tint = SakuTextMuted,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -449,13 +445,13 @@ private fun StepTwoPayer(
             "Siapa yang membayar tagihan terlebih dahulu?",
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
-            color = SakuTextDark,
+            color = MaterialTheme.colorScheme.onSurface,
             lineHeight = 22.sp
         )
         Text(
             "Payer adalah orang yang membayar total tagihan di awal.",
             fontSize = 13.sp,
-            color = SakuTextMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             lineHeight = 18.sp
         )
 
@@ -466,12 +462,12 @@ private fun StepTwoPayer(
             Card(
                 colors = CardDefaults.cardColors(
                     containerColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                                    else SakuCardBackground
+                                    else MaterialTheme.colorScheme.surface
                 ),
                 shape = RoundedCornerShape(16.dp),
                 border = BorderStroke(
                     2.dp,
-                    if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFFE2E8F0)
+                    if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -494,7 +490,7 @@ private fun StepTwoPayer(
                                 .clip(CircleShape)
                                 .background(
                                     if (isSelected) MaterialTheme.colorScheme.primary
-                                    else SakuInputBackground
+                                    else MaterialTheme.colorScheme.surfaceVariant
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
@@ -502,14 +498,14 @@ private fun StepTwoPayer(
                                 text = name.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 18.sp,
-                                color = if (isSelected) Color.White else SakuTextMuted
+                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Text(
                             text = name,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 16.sp,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else SakuTextDark
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         )
                     }
                     if (isSelected) {
@@ -573,7 +569,7 @@ private fun StepThreePreview(
     ) {
         item {
             Spacer(modifier = Modifier.height(4.dp))
-            Text("Pembagian Biaya", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = SakuTextDark)
+            Text("Pembagian Biaya", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
             Spacer(modifier = Modifier.height(4.dp))
 
             // Summary card
@@ -585,7 +581,7 @@ private fun StepThreePreview(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(calc.title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = SakuTextDark)
+                    Text(calc.title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
                     Text(
                         "Total: ${fmt.format(calc.totalAmount)}",
                         fontSize = 14.sp,
@@ -595,7 +591,7 @@ private fun StepThreePreview(
                     Text(
                         "Dibayar oleh: ${calc.payerName}",
                         fontSize = 13.sp,
-                        color = SakuTextMuted
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -604,9 +600,9 @@ private fun StepThreePreview(
         items(calc.participants) { participant ->
             val isPayer = participant.isPayer
             Card(
-                colors = CardDefaults.cardColors(containerColor = SakuCardBackground),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -642,12 +638,12 @@ private fun StepThreePreview(
                                 text = participant.name,
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 14.sp,
-                                color = SakuTextDark
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = if (isPayer) "Membayar di awal" else "Belum membayar",
                                 fontSize = 12.sp,
-                                color = SakuTextMuted
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -708,12 +704,12 @@ private fun StepFourResult(
     ) {
         item {
             Spacer(modifier = Modifier.height(4.dp))
-            Text("Siapa Bayar Siapa?", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = SakuTextDark)
+            Text("Siapa Bayar Siapa?", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 "Berikut adalah kewajiban masing-masing peserta.",
                 fontSize = 13.sp,
-                color = SakuTextMuted
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
@@ -734,7 +730,7 @@ private fun StepFourResult(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Total Piutang ${calc.payerName}", fontSize = 13.sp, color = SakuTextMuted)
+                        Text("Total Piutang ${calc.payerName}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
                             text = fmt.format(totalReceivable),
                             fontWeight = FontWeight.Bold,
@@ -754,9 +750,9 @@ private fun StepFourResult(
 
         items(calc.settlementItems) { settlement ->
             Card(
-                colors = CardDefaults.cardColors(containerColor = SakuCardBackground),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -796,9 +792,9 @@ private fun StepFourResult(
                                     text = settlement.from,
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 14.sp,
-                                    color = SakuTextDark
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
-                                Text(text = "bayar ke", fontSize = 12.sp, color = SakuTextMuted)
+                                Text(text = "bayar ke", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Text(
                                     text = settlement.to,
                                     fontWeight = FontWeight.SemiBold,

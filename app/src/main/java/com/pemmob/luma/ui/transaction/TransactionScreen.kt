@@ -675,6 +675,7 @@ fun TransactionFormDialog(
     val calendar = Calendar.getInstance().apply { timeInMillis = date }
     val datePickerDialog = DatePickerDialog(
         context,
+        com.pemmob.luma.R.style.LumaDatePickerTheme,
         { _, year, month, dayOfMonth ->
             val newCalendar = Calendar.getInstance().apply {
                 set(year, month, dayOfMonth)
@@ -724,7 +725,7 @@ fun TransactionFormDialog(
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (type == "INCOME") MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.background,
-                            contentColor = if (type == "INCOME") MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                            contentColor = if (type == "INCOME") Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {

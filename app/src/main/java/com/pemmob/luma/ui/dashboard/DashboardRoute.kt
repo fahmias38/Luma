@@ -16,9 +16,12 @@ fun DashboardRoute(
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val filter by viewModel.filter.collectAsStateWithLifecycle()
 
     DashboardScreen(
         uiState = uiState,
+        currentFilter = filter,
+        onFilterChange = { viewModel.refreshWithFilter(it) },
         onAddTransactionClick = onAddTransactionClick,
         onSplitBillClick = onSplitBillClick,
         onDebtClick = onDebtClick,

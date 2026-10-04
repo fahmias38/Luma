@@ -75,10 +75,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pemmob.luma.domain.model.UserDomainModel
-import com.pemmob.luma.ui.theme.SakuCardBackground
-import com.pemmob.luma.ui.theme.SakuPrimary
-import com.pemmob.luma.ui.theme.SakuTextDark
-import com.pemmob.luma.ui.theme.SakuTextMuted
 
 @Composable
 fun ProfileRoute(
@@ -196,13 +192,13 @@ fun ProfileScreen(
                 text = "LUMA v1.0.4 for Android",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
-                color = SakuTextMuted
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = "Dirancang untuk Mahasiswa Indonesia",
                 fontSize = 12.sp,
-                color = SakuTextMuted.copy(alpha = 0.7f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -263,7 +259,7 @@ private fun ProfileTopAppBar(
     onNotificationClick: () -> Unit
 ) {
     Surface(
-        color = Color(0xFFF8FAFC),
+        color = MaterialTheme.colorScheme.background,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -277,7 +273,7 @@ private fun ProfileTopAppBar(
                 text = "Profil & Pengaturan",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = SakuTextDark
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             // Bell Notification Icon
@@ -291,7 +287,7 @@ private fun ProfileTopAppBar(
                 Icon(
                     imageVector = Icons.Default.Notifications,
                     contentDescription = "Notifikasi",
-                    tint = SakuTextDark,
+                    tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(24.dp)
                 )
                 // Red badge dot
@@ -341,7 +337,7 @@ private fun ProfileHeaderCard(
                         modifier = Modifier
                             .size(64.dp)
                             .clip(CircleShape)
-                            .background(SakuPrimary),
+                            .background(MaterialTheme.colorScheme.primary),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -382,7 +378,7 @@ private fun ProfileHeaderCard(
                             text = fullName,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = SakuTextDark
+                            color = MaterialTheme.colorScheme.onSurface
                         )
 
                         IconButton(
@@ -392,7 +388,7 @@ private fun ProfileHeaderCard(
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = "Edit Profil",
-                                tint = SakuPrimary,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -401,7 +397,7 @@ private fun ProfileHeaderCard(
                     Text(
                         text = email,
                         fontSize = 13.sp,
-                        color = SakuTextMuted
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -434,7 +430,7 @@ private fun ProfileHeaderCard(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
             Spacer(modifier = Modifier.height(12.dp))
 
             // Bottom Stats Row
@@ -445,41 +441,41 @@ private fun ProfileHeaderCard(
             ) {
                 // Stat 1
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Bulan Aktif", fontSize = 11.sp, color = SakuTextMuted)
+                    Text(text = "Bulan Aktif", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "$activeMonths Bulan",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = SakuPrimary
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
 
                 VerticalDivider(
-                    color = Color(0xFFE2E8F0),
+                    color = MaterialTheme.colorScheme.outlineVariant,
                     modifier = Modifier.height(28.dp)
                 )
 
                 // Stat 2
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Transaksi", fontSize = 11.sp, color = SakuTextMuted)
+                    Text(text = "Transaksi", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "$totalTransactions",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = SakuTextDark
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
                 VerticalDivider(
-                    color = Color(0xFFE2E8F0),
+                    color = MaterialTheme.colorScheme.outlineVariant,
                     modifier = Modifier.height(28.dp)
                 )
 
                 // Stat 3
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Utang Lunas", fontSize = 11.sp, color = SakuTextMuted)
+                    Text(text = "Utang Lunas", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.height(2.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -511,7 +507,7 @@ private fun ProfileMenuItem(
     iconTintColor: Color,
     title: String,
     subtitle: String,
-    subtitleColor: Color = SakuTextMuted,
+    subtitleColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     trailingContent: @Composable () -> Unit,
     onClick: (() -> Unit)? = null
 ) {
@@ -544,7 +540,7 @@ private fun ProfileMenuItem(
                 text = title,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                color = SakuTextDark
+                color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
@@ -568,7 +564,7 @@ private fun SectionTitle(title: String) {
         text = title,
         fontSize = 12.sp,
         fontWeight = FontWeight.Bold,
-        color = SakuTextMuted,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         letterSpacing = 0.5.sp,
         modifier = Modifier.fillMaxWidth()
     )
@@ -605,7 +601,7 @@ private fun EditProfileDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0xFFF1F5F9))
+                        .background(MaterialTheme.colorScheme.outlineVariant)
                         .padding(4.dp)
                 ) {
                     val tabs = listOf("Nama", "Email", "Password")
@@ -615,7 +611,7 @@ private fun EditProfileDialog(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) SakuPrimary else Color.Transparent)
+                                .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
                                 .clickable { selectedTab = index }
                                 .padding(vertical = 6.dp),
                             contentAlignment = Alignment.Center
@@ -624,7 +620,7 @@ private fun EditProfileDialog(
                                 text = title,
                                 fontSize = 12.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) Color.White else SakuTextMuted
+                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }

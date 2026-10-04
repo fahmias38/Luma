@@ -26,11 +26,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pemmob.luma.data.local.entity.DebtReceivableEntity
-import com.pemmob.luma.ui.theme.SakuCanvasBackground
-import com.pemmob.luma.ui.theme.SakuCardBackground
-import com.pemmob.luma.ui.theme.SakuInputBackground
-import com.pemmob.luma.ui.theme.SakuTextDark
-import com.pemmob.luma.ui.theme.SakuTextMuted
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -154,13 +149,13 @@ fun DebtScreen(
                                     Icons.Default.AccountBalance,
                                     contentDescription = null,
                                     modifier = Modifier.size(64.dp),
-                                    tint = SakuTextMuted.copy(alpha = 0.4f)
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                                 )
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Text(
                                     text = "Belum ada data.",
                                     style = MaterialTheme.typography.bodyLarge,
-                                    color = SakuTextMuted
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -298,10 +293,10 @@ private fun DebtSummaryCards(
     }
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = SakuCardBackground),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(1.dp),
-        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -339,7 +334,7 @@ private fun SummaryCard(
         maximumFractionDigits = 0
     }
     Card(
-        colors = CardDefaults.cardColors(containerColor = SakuInputBackground),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         shape = RoundedCornerShape(16.dp),
         modifier = modifier
     ) {
@@ -347,7 +342,7 @@ private fun SummaryCard(
             Text(
                 text = label,
                 fontSize = 12.sp,
-                color = SakuTextMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Medium
             )
             Spacer(modifier = Modifier.height(6.dp))
@@ -380,10 +375,10 @@ fun DebtItemCard(
     val remainingAmount = (item.amount - item.paidAmount).coerceAtLeast(0L)
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = SakuCardBackground),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(1.dp),
-        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
@@ -421,7 +416,7 @@ fun DebtItemCard(
                         text = item.personName,
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp,
-                        color = SakuTextDark,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -461,12 +456,12 @@ fun DebtItemCard(
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Medium
                         )
-                        Text(text = "·", fontSize = 11.sp, color = SakuTextMuted)
+                        Text(text = "·", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Text(
                         text = dateFormat.format(Date(item.date)),
                         fontSize = 11.sp,
-                        color = SakuTextMuted
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

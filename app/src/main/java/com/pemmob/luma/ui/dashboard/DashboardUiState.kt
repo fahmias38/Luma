@@ -1,5 +1,7 @@
 package com.pemmob.luma.ui.dashboard
 
+enum class DashboardFilter { MONTH, ALL }
+
 sealed interface DashboardUiState {
     data object Loading : DashboardUiState
     data class Success(val data: DashboardData) : DashboardUiState
@@ -16,9 +18,15 @@ data class DashboardData(
     val receivable: Double,
     val pendingDebtCount: Int,
     val pendingReceivableCount: Int,
-    val topCategoryName: String,
-    val topCategoryPercentage: Int,
-    val recentTransactions: List<TransactionData>
+    val topCategories: List<CategoryData>,         // Top 3 kategori pengeluaran
+    val recentTransactions: List<TransactionData>,
+    val hasNotification: Boolean = false
+)
+
+data class CategoryData(
+    val name: String,
+    val amount: Double,
+    val percentage: Int
 )
 
 data class TransactionData(

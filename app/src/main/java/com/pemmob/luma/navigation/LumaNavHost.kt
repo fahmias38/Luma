@@ -56,8 +56,6 @@ import com.pemmob.luma.ui.profile.ProfileRoute
 import com.pemmob.luma.ui.splitbill.SplitBillScreen
 import com.pemmob.luma.ui.statistics.StatisticsContent
 import com.pemmob.luma.ui.notification.NotificationContent
-import com.pemmob.luma.ui.theme.SakuCardBackground
-import com.pemmob.luma.ui.theme.SakuTextMuted
 import com.pemmob.luma.ui.transaction.TransactionScreen
 
 // ===== DATA CLASS UNTUK BOTTOM NAV ITEMS =====
@@ -277,7 +275,7 @@ private fun LumaBottomNavigationBar(
     onNavigate: (Any) -> Unit
 ) {
     NavigationBar(
-        containerColor = SakuCardBackground,
+        containerColor = MaterialTheme.colorScheme.surface,
         tonalElevation = 0.dp
     ) {
         bottomNavItems.forEach { item ->
@@ -302,8 +300,8 @@ private fun LumaBottomNavigationBar(
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = MaterialTheme.colorScheme.primary,
                     selectedTextColor = MaterialTheme.colorScheme.primary,
-                    unselectedIconColor = SakuTextMuted,
-                    unselectedTextColor = SakuTextMuted,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                 )
             )

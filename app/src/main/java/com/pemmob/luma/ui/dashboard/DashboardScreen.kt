@@ -14,6 +14,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -30,6 +32,8 @@ import java.util.Locale
 @Composable
 fun DashboardScreen(
     uiState: DashboardUiState,
+    currentFilter: DashboardFilter,
+    onFilterChange: (DashboardFilter) -> Unit,
     onAddTransactionClick: () -> Unit,
     onSplitBillClick: () -> Unit,
     onDebtClick: () -> Unit,
@@ -40,18 +44,6 @@ fun DashboardScreen(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        floatingActionButton = {
-            if (uiState is DashboardUiState.Success) {
-                ExtendedFloatingActionButton(
-                    text = { Text("Catat", style = MaterialTheme.typography.labelLarge) },
-                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                    onClick = onAddTransactionClick,
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    shape = CircleShape
-                )
-            }
-        },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Box(
@@ -76,6 +68,8 @@ fun DashboardScreen(
                 is DashboardUiState.Success -> {
                     DashboardSuccessContent(
                         data = uiState.data,
+                        currentFilter = currentFilter,
+                        onFilterChange = onFilterChange,
                         onAddTransactionClick = onAddTransactionClick,
                         onSplitBillClick = onSplitBillClick,
                         onDebtClick = onDebtClick,
@@ -92,6 +86,8 @@ fun DashboardScreen(
 @Composable
 private fun DashboardSuccessContent(
     data: DashboardData,
+    currentFilter: DashboardFilter,
+    onFilterChange: (DashboardFilter) -> Unit,
     onAddTransactionClick: () -> Unit,
     onSplitBillClick: () -> Unit,
     onDebtClick: () -> Unit,
@@ -110,6 +106,7 @@ private fun DashboardSuccessContent(
             DashboardHeader(
                 userName = data.userName, 
                 monthYear = data.monthYear,
+                hasNotification = data.hasNotification,
                 onNotificationClick = onNotificationClick
             )
         }
@@ -120,6 +117,23 @@ private fun DashboardSuccessContent(
                 onSplitBillClick = onSplitBillClick,
                 onDebtClick = onDebtClick
             )
+        }
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = currentFilter == DashboardFilter.MONTH,
+                    onClick = { onFilterChange(DashboardFilter.MONTH) },
+                    label = { Text("Bulan Ini") }
+                )
+                FilterChip(
+                    selected = currentFilter == DashboardFilter.ALL,
+                    onClick = { onFilterChange(DashboardFilter.ALL) },
+                    label = { Text("Semua") }
+                )
+            }
         }
         item {
             Row(
@@ -151,8 +165,7 @@ private fun DashboardSuccessContent(
         }
         item {
             InsightCard(
-                topCategoryName = data.topCategoryName,
-                topCategoryPercentage = data.topCategoryPercentage,
+                topCategories = data.topCategories,
                 onCardClick = onStatisticsClick
             )
         }
@@ -199,29 +212,38 @@ private fun DashboardSuccessContent(
 }
 
 @Composable
-private fun DashboardHeader(userName: String, monthYear: String, onNotificationClick: () -> Unit) {
+private fun DashboardHeader(
+    userName: String, 
+    monthYear: String, 
+    hasNotification: Boolean,
+    onNotificationClick: () -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            val initial = userName.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "F"
             Box(
                 modifier = Modifier
                     .size(44.dp)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = userName.firstOrNull()?.toString()?.uppercase() ?: "",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    text = initial,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
                 )
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column {
+                val displayName = userName.take(12) + if (userName.length > 12) "…" else ""
                 Text(
-                    text = "Halo, $userName",
+                    text = "Halo, $displayName",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onBackground
                 )
@@ -232,17 +254,30 @@ private fun DashboardHeader(userName: String, monthYear: String, onNotificationC
                 )
             }
         }
-        IconButton(
-            onClick = onNotificationClick,
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.surface, CircleShape)
-                .size(44.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Notifications,
-                contentDescription = "Notifikasi",
-                tint = MaterialTheme.colorScheme.onBackground
-            )
+        Box(contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .clickable { onNotificationClick() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = "Notifikasi",
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
+            if (hasNotification) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFEF4444))
+                        .align(Alignment.TopEnd)
+                )
+            }
         }
     }
 }
@@ -254,6 +289,8 @@ private fun HeroBalanceCard(
     onSplitBillClick: () -> Unit,
     onDebtClick: () -> Unit
 ) {
+    var balanceVisible by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -271,17 +308,23 @@ private fun HeroBalanceCard(
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
                 )
                 Icon(
-                    imageVector = Icons.Default.Visibility,
+                    imageVector = if (balanceVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                     contentDescription = "Sembunyikan saldo",
                     tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier
+                        .size(20.dp)
+                        .clickable { balanceVisible = !balanceVisible }
                 )
             }
             Spacer(modifier = Modifier.height(12.dp))
             
-            val formattedBalance = NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply {
-                maximumFractionDigits = 0
-            }.format(balance).replace("Rp", "Rp")
+            val formattedBalance = if (balanceVisible) {
+                NumberFormat.getCurrencyInstance(Locale.forLanguageTag("id-ID")).apply {
+                    maximumFractionDigits = 0
+                }.format(balance).replace("Rp", "Rp")
+            } else {
+                "Rp *****"
+            }
             
             Text(
                 text = formattedBalance,
@@ -477,8 +520,7 @@ private fun DebtSummaryCard(
 
 @Composable
 private fun InsightCard(
-    topCategoryName: String,
-    topCategoryPercentage: Int,
+    topCategories: List<CategoryData>,
     onCardClick: () -> Unit
 ) {
     LumaCard(modifier = Modifier.clickable { onCardClick() }) {
@@ -491,7 +533,7 @@ private fun InsightCard(
                 Icon(Icons.Default.PieChart, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    "Insight Pengeluaran",
+                    "Top 3 Pengeluaran",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -502,37 +544,54 @@ private fun InsightCard(
                 color = MaterialTheme.colorScheme.primary
             )
         }
-        Spacer(modifier = Modifier.height(16.dp))
         
-        Text(
-            buildAnnotatedString {
-                append("Top kategori: ")
-                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)) {
-                    append("$topCategoryName ($topCategoryPercentage%)")
-                }
-                append(" dari pengeluaran.")
-            },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // Custom simple multi-segmented progress bar
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(8.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)) // Grey part
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(topCategoryPercentage / 100f)
-                    .height(8.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary) // Primary filled part
+        if (topCategories.isEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                "Belum ada data pengeluaran.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
+        } else {
+            Spacer(modifier = Modifier.height(16.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                topCategories.forEach { category ->
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = category.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "${category.percentage}%",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        // Bar chart horizontal
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(category.percentage / 100f)
+                                    .height(6.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary)
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -543,6 +602,7 @@ private fun getIconForCategory(category: String): ImageVector {
         "transportasi" -> Icons.Default.DirectionsBike
         "pemasukan" -> Icons.Default.AccountBalanceWallet
         "cafe & nongkrong" -> Icons.Default.LocalCafe
+        "utang", "piutang" -> Icons.Default.AccountBalance
         else -> Icons.Default.Receipt
     }
 }
@@ -557,14 +617,18 @@ private fun getDummyDashboardData() = DashboardData(
     receivable = 175000.0,
     pendingDebtCount = 2,
     pendingReceivableCount = 3,
-    topCategoryName = "Makanan",
-    topCategoryPercentage = 45,
+    topCategories = listOf(
+        CategoryData("Makanan", 337500.0, 45),
+        CategoryData("Transportasi", 225000.0, 30),
+        CategoryData("Cafe", 112500.0, 15)
+    ),
     recentTransactions = listOf(
         TransactionData("1", "Makan Siang Kantin", "10 Sep", "Makanan", 25000.0, false, "QRIS"),
         TransactionData("2", "Ojek ke Kampus", "10 Sep", "Transportasi", 15000.0, false, "E-Wallet"),
         TransactionData("3", "Transfer Uang Saku", "9 Sep", "Pemasukan", 500000.0, true, "Transfer Bank"),
         TransactionData("4", "Kopi Belajar Nugas", "8 Sep", "Cafe & Nongkrong", 22000.0, false, null)
-    )
+    ),
+    hasNotification = true
 )
 
 @Preview(showBackground = true)
@@ -573,6 +637,8 @@ private fun PreviewDashboardSuccess() {
     LUMATheme {
         DashboardScreen(
             uiState = DashboardUiState.Success(getDummyDashboardData()),
+            currentFilter = DashboardFilter.MONTH,
+            onFilterChange = {},
             onAddTransactionClick = {},
             onSplitBillClick = {},
             onDebtClick = {},
@@ -589,6 +655,8 @@ private fun PreviewDashboardLoading() {
     LUMATheme {
         DashboardScreen(
             uiState = DashboardUiState.Loading,
+            currentFilter = DashboardFilter.MONTH,
+            onFilterChange = {},
             onAddTransactionClick = {},
             onSplitBillClick = {},
             onDebtClick = {},
@@ -606,6 +674,8 @@ private fun PreviewDashboardEmpty() {
         val emptyData = getDummyDashboardData().copy(recentTransactions = emptyList())
         DashboardScreen(
             uiState = DashboardUiState.Success(emptyData),
+            currentFilter = DashboardFilter.MONTH,
+            onFilterChange = {},
             onAddTransactionClick = {},
             onSplitBillClick = {},
             onDebtClick = {},
@@ -622,6 +692,8 @@ private fun PreviewDashboardError() {
     LUMATheme {
         DashboardScreen(
             uiState = DashboardUiState.Error("Gagal mengambil data dari server."),
+            currentFilter = DashboardFilter.MONTH,
+            onFilterChange = {},
             onAddTransactionClick = {},
             onSplitBillClick = {},
             onDebtClick = {},

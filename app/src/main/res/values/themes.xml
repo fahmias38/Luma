@@ -2,4 +2,13 @@
 <resources>
 
     <style name="Theme.LUMA" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- Tema DatePickerDialog dengan warna primary ungu Luma -->
+    <style name="LumaDatePickerTheme" parent="android:Theme.Material.Light.Dialog">
+        <item name="android:colorAccent">#4338CA</item>
+        <item name="android:colorPrimary">#4338CA</item>
+        <item name="android:colorPrimaryDark">#3730A3</item>
+        <item name="android:windowIsFloating">true</item>
+    </style>
+
 </resources>

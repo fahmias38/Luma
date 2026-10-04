@@ -21,10 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.pemmob.luma.ui.theme.SakuCanvasBackground
-import com.pemmob.luma.ui.theme.SakuCardBackground
-import com.pemmob.luma.ui.theme.SakuTextDark
-import com.pemmob.luma.ui.theme.SakuTextMuted
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -64,6 +60,7 @@ fun AddPaymentScreen(
     val calendar = Calendar.getInstance().apply { timeInMillis = paymentDate }
     val datePickerDialog = DatePickerDialog(
         context,
+        com.pemmob.luma.R.style.LumaDatePickerTheme,
         { _, year, month, day ->
             calendar.set(year, month, day)
             paymentDate = calendar.timeInMillis
@@ -88,7 +85,7 @@ fun AddPaymentScreen(
                         "Catat Pembayaran",
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp,
-                        color = SakuTextDark
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 navigationIcon = {
@@ -97,11 +94,11 @@ fun AddPaymentScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = SakuCanvasBackground
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         },
-        containerColor = SakuCanvasBackground
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -122,7 +119,7 @@ fun AddPaymentScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Sisa Kewajiban", fontSize = 13.sp, color = SakuTextMuted)
+                    Text("Sisa Kewajiban", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = fmt.format(remainingAmount),
@@ -141,7 +138,7 @@ fun AddPaymentScreen(
                     amountError = null
                 },
                 label = { Text("Nominal Pembayaran (Rp)") },
-                placeholder = { Text("Maksimal ${fmt.format(remainingAmount)}", color = SakuTextMuted) },
+                placeholder = { Text("Maksimal ${fmt.format(remainingAmount)}", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 isError = amountError != null,
                 supportingText = amountError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),

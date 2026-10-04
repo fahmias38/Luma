@@ -33,6 +33,9 @@ class DebtReceivableRepositoryImpl @Inject constructor(
     override fun observePayments(debtId: String): Flow<List<PaymentEntity>> =
         paymentDao.observeByDebtId(debtId)
 
+    override fun observeAllPayments(userId: String): Flow<List<PaymentEntity>> =
+        paymentDao.observeAll()
+
     override fun observeBySplitBillId(splitBillId: String): Flow<List<DebtReceivableEntity>> =
         debtDao.observeBySplitBillId(splitBillId)
 

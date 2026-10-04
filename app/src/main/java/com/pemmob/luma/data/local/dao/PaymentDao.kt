@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface PaymentDao {
 
+    @Query("SELECT * FROM payments ORDER BY paymentDate DESC")
+    fun observeAll(): Flow<List<PaymentEntity>>
+
     @Query("SELECT * FROM payments WHERE debtReceivableId = :debtId ORDER BY paymentDate DESC")
     fun observeByDebtId(debtId: String): Flow<List<PaymentEntity>>
 
