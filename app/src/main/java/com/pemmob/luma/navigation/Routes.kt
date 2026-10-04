@@ -53,3 +53,6 @@ object ProfileRoute
 @Serializable
 object StatisticsRoute
 
+@Serializable
+object NotificationRoute
+

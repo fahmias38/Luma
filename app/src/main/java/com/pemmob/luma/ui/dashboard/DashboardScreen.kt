@@ -35,6 +35,7 @@ fun DashboardScreen(
     onDebtClick: () -> Unit,
     onSeeAllTransactionsClick: () -> Unit,
     onStatisticsClick: () -> Unit,
+    onNotificationClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -79,7 +80,8 @@ fun DashboardScreen(
                         onSplitBillClick = onSplitBillClick,
                         onDebtClick = onDebtClick,
                         onSeeAllTransactionsClick = onSeeAllTransactionsClick,
-                        onStatisticsClick = onStatisticsClick
+                        onStatisticsClick = onStatisticsClick,
+                        onNotificationClick = onNotificationClick
                     )
                 }
             }
@@ -94,7 +96,8 @@ private fun DashboardSuccessContent(
     onSplitBillClick: () -> Unit,
     onDebtClick: () -> Unit,
     onSeeAllTransactionsClick: () -> Unit,
-    onStatisticsClick: () -> Unit
+    onStatisticsClick: () -> Unit,
+    onNotificationClick: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier
@@ -104,7 +107,11 @@ private fun DashboardSuccessContent(
     ) {
         item {
             Spacer(modifier = Modifier.height(16.dp))
-            DashboardHeader(userName = data.userName, monthYear = data.monthYear)
+            DashboardHeader(
+                userName = data.userName, 
+                monthYear = data.monthYear,
+                onNotificationClick = onNotificationClick
+            )
         }
         item {
             HeroBalanceCard(
@@ -192,7 +199,7 @@ private fun DashboardSuccessContent(
 }
 
 @Composable
-private fun DashboardHeader(userName: String, monthYear: String) {
+private fun DashboardHeader(userName: String, monthYear: String, onNotificationClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -226,7 +233,7 @@ private fun DashboardHeader(userName: String, monthYear: String) {
             }
         }
         IconButton(
-            onClick = { },
+            onClick = onNotificationClick,
             modifier = Modifier
                 .background(MaterialTheme.colorScheme.surface, CircleShape)
                 .size(44.dp)
@@ -570,7 +577,8 @@ private fun PreviewDashboardSuccess() {
             onSplitBillClick = {},
             onDebtClick = {},
             onSeeAllTransactionsClick = {},
-            onStatisticsClick = {}
+            onStatisticsClick = {},
+            onNotificationClick = {}
         )
     }
 }
@@ -585,7 +593,8 @@ private fun PreviewDashboardLoading() {
             onSplitBillClick = {},
             onDebtClick = {},
             onSeeAllTransactionsClick = {},
-            onStatisticsClick = {}
+            onStatisticsClick = {},
+            onNotificationClick = {}
         )
     }
 }
@@ -601,7 +610,8 @@ private fun PreviewDashboardEmpty() {
             onSplitBillClick = {},
             onDebtClick = {},
             onSeeAllTransactionsClick = {},
-            onStatisticsClick = {}
+            onStatisticsClick = {},
+            onNotificationClick = {}
         )
     }
 }
@@ -616,7 +626,8 @@ private fun PreviewDashboardError() {
             onSplitBillClick = {},
             onDebtClick = {},
             onSeeAllTransactionsClick = {},
-            onStatisticsClick = {}
+            onStatisticsClick = {},
+            onNotificationClick = {}
         )
     }
 }
