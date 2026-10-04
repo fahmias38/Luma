@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -17,7 +16,6 @@ import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Receipt
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -31,7 +29,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -55,6 +52,7 @@ import com.pemmob.luma.ui.debt.AddDebtScreen
 import com.pemmob.luma.ui.debt.AddPaymentScreen
 import com.pemmob.luma.ui.debt.DebtDetailScreen
 import com.pemmob.luma.ui.debt.DebtScreen
+import com.pemmob.luma.ui.profile.ProfileRoute
 import com.pemmob.luma.ui.splitbill.SplitBillScreen
 import com.pemmob.luma.ui.statistics.StatisticsContent
 import com.pemmob.luma.ui.theme.SakuCardBackground
@@ -225,7 +223,6 @@ fun LumaNavHost(
                     SplitBillScreen(
                         onNavigateBack = { navController.popBackStack() },
                         onSplitBillCreated = { splitBillId ->
-                            // Setelah Split Bill tersimpan, navigasi ke Debt list
                             navController.navigate(DebtRoute) {
                                 popUpTo(SplitBillRoute) { inclusive = true }
                             }
@@ -244,7 +241,7 @@ fun LumaNavHost(
                 // ===== PROFIL =====
 
                 composable<ProfileRoute> {
-                    ProfilePlaceholderScreen(
+                    ProfileRoute(
                         onLogoutSuccess = {
                             navController.navigate(AuthGraph) {
                                 popUpTo<MainGraph> { inclusive = true }
@@ -333,140 +330,6 @@ private fun SplashScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
             CircularProgressIndicator()
-        }
-    }
-}
-
-// ===== DASHBOARD PLACEHOLDER =====
-
-@Composable
-private fun DashboardPlaceholderScreen(
-    onNavigateToTransactions: () -> Unit,
-    onNavigateToDebt: () -> Unit,
-    onNavigateToSplitBill: () -> Unit,
-    onLogoutSuccess: () -> Unit,
-    viewModel: AuthViewModel = hiltViewModel()
-) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
-
-    LaunchedEffect(Unit) {
-        if (currentUser == null) viewModel.checkSession()
-    }
-
-    LaunchedEffect(uiState) {
-        if (uiState is AuthUiState.LoggedOut) onLogoutSuccess()
-    }
-
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(horizontal = 32.dp)
-        ) {
-            Text(
-                text = "Beranda LUMA",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Selamat datang, ${currentUser?.fullName ?: currentUser?.email ?: "Pengguna"}",
-                style = MaterialTheme.typography.bodyLarge
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(
-                onClick = onNavigateToTransactions,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Riwayat Transaksi")
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Button(
-                onClick = onNavigateToDebt,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Utang & Piutang")
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Button(
-                onClick = onNavigateToSplitBill,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Buat Split Bill")
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Button(
-                onClick = { viewModel.onLogoutClick() },
-                enabled = uiState !is AuthUiState.Loading,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (uiState is AuthUiState.Loading) {
-                    CircularProgressIndicator(
-                        color = Color.White,
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.size(24.dp)
-                    )
-                } else {
-                    Text("Keluar")
-                }
-            }
-        }
-    }
-}
-
-// ===== PROFILE PLACEHOLDER =====
-
-@Composable
-private fun ProfilePlaceholderScreen(
-    onLogoutSuccess: () -> Unit,
-    viewModel: AuthViewModel = hiltViewModel()
-) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
-
-    LaunchedEffect(uiState) {
-        if (uiState is AuthUiState.LoggedOut) onLogoutSuccess()
-    }
-
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(horizontal = 32.dp)
-        ) {
-            Icon(
-                Icons.Filled.Person,
-                contentDescription = null,
-                modifier = Modifier.size(72.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = currentUser?.fullName ?: currentUser?.email ?: "Pengguna",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            currentUser?.email?.let { email ->
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(text = email, color = SakuTextMuted, fontSize = 14.sp)
-            }
-            Spacer(modifier = Modifier.height(32.dp))
-            Button(
-                onClick = { viewModel.onLogoutClick() },
-                enabled = uiState !is AuthUiState.Loading,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (uiState is AuthUiState.Loading) {
-                    CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(22.dp))
-                } else {
-                    Text("Keluar", fontWeight = FontWeight.Bold)
-                }
-            }
         }
     }
 }

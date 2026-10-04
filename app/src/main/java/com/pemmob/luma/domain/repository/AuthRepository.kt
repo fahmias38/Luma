@@ -8,4 +8,7 @@ interface AuthRepository {
     suspend fun logout(): Result<Unit>
     suspend fun checkSession(): Boolean
     suspend fun getCurrentUser(): UserDomainModel?
+    suspend fun updateFullName(fullName: String): Result<UserDomainModel>
+    suspend fun updateEmail(newEmail: String): Result<UserDomainModel>
+    suspend fun updatePassword(newPassword: String): Result<Unit>
 }

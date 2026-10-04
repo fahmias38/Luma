@@ -86,6 +86,48 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateFullName(fullName: String): Result<UserDomainModel> {
+        return safeApiCall {
+            supabaseClient.auth.updateUser {
+                data = buildJsonObject {
+                    put("full_name", fullName)
+                }
+            }
+            val user = supabaseClient.auth.currentUserOrNull()
+                ?: throw IllegalStateException("Pengguna tidak ditemukan.")
+            UserDomainModel(
+                id = user.id,
+                email = user.email ?: "",
+                fullName = fullName
+            )
+        }
+    }
+
+    override suspend fun updateEmail(newEmail: String): Result<UserDomainModel> {
+        return safeApiCall {
+            supabaseClient.auth.updateUser {
+                email = newEmail
+            }
+            val user = supabaseClient.auth.currentUserOrNull()
+                ?: throw IllegalStateException("Pengguna tidak ditemukan.")
+            val fullName = user.userMetadata?.get("full_name")?.toString()?.replace("\"", "")
+            UserDomainModel(
+                id = user.id,
+                email = user.email ?: newEmail,
+                fullName = fullName
+            )
+        }
+    }
+
+    override suspend fun updatePassword(newPassword: String): Result<Unit> {
+        return safeApiCall {
+            supabaseClient.auth.updateUser {
+                password = newPassword
+            }
+            Unit
+        }
+    }
+
     private inline fun <T> safeApiCall(block: () -> T): Result<T> {
         return try {
             Result.success(block())
