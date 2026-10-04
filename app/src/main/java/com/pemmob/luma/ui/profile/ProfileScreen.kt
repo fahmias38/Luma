@@ -83,6 +83,7 @@ import com.pemmob.luma.ui.theme.SakuTextMuted
 @Composable
 fun ProfileRoute(
     onLogoutSuccess: () -> Unit,
+    onNotificationClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
@@ -103,6 +104,7 @@ fun ProfileRoute(
         },
         onLogoutClick = { viewModel.logout() },
         onClearMessages = { viewModel.clearMessages() },
+        onNotificationClick = onNotificationClick,
         modifier = modifier
     )
 }
@@ -115,6 +117,7 @@ fun ProfileScreen(
     onUpdatePassword: (String, String) -> Unit,
     onLogoutClick: () -> Unit,
     onClearMessages: () -> Unit,
+    onNotificationClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -136,7 +139,7 @@ fun ProfileScreen(
 
     Scaffold(
         topBar = {
-            ProfileTopAppBar()
+            ProfileTopAppBar(onNotificationClick = onNotificationClick)
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         containerColor = Color(0xFFF8FAFC),
@@ -256,8 +259,9 @@ fun ProfileScreen(
                         icon = Icons.Default.Notifications,
                         iconBgColor = Color(0xFFEEF2FF),
                         iconTintColor = SakuPrimary,
-                        title = "Notifikasi & Peringat Tagihan",
+                        title = "Notifikasi & Peringatan Tagihan",
                         subtitle = "Peringatan jatuh tempo kos & WiFi",
+                        onClick = onNotificationClick,
                         trailingContent = {
                             Switch(
                                 checked = isNotificationEnabled,
@@ -419,7 +423,9 @@ fun ProfileScreen(
 // ===== COMPOSABLE TOP APP BAR =====
 
 @Composable
-private fun ProfileTopAppBar() {
+private fun ProfileTopAppBar(
+    onNotificationClick: () -> Unit
+) {
     Surface(
         color = Color(0xFFF8FAFC),
         modifier = Modifier.fillMaxWidth()
@@ -431,37 +437,19 @@ private fun ProfileTopAppBar() {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Logo Icon
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(SakuPrimary.copy(alpha = 0.1f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.AccountBalance,
-                        contentDescription = "Logo",
-                        tint = SakuPrimary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Profil & Pengaturan",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = SakuTextDark
-                )
-            }
+            Text(
+                text = "Profil & Pengaturan",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = SakuTextDark
+            )
 
             // Bell Notification Icon
             Box(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .clickable { },
+                    .clickable { onNotificationClick() },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(

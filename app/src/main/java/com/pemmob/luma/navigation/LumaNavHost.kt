@@ -258,6 +258,9 @@ fun LumaNavHost(
                             navController.navigate(AuthGraph) {
                                 popUpTo<MainGraph> { inclusive = true }
                             }
+                        },
+                        onNotificationClick = {
+                            navController.navigate(NotificationRoute)
                         }
                     )
                 }
