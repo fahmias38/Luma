@@ -11,4 +11,5 @@ interface TransactionRepository {
     suspend fun updateTransaction(transaction: TransactionEntity)
     suspend fun deleteTransaction(transaction: TransactionEntity)
     suspend fun deleteTransactionById(transactionId: String)
+    suspend fun syncRemoteTransactions(userId: String): Result<Unit> = Result.success(Unit)
 }

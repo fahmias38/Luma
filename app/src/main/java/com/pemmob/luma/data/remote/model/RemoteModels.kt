@@ -4,6 +4,22 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
+ * Model untuk sinkronisasi Transaksi (Pemasukan / Pengeluaran) ke Supabase.
+ */
+@Serializable
+data class TransactionRemote(
+    val id: String,
+    @SerialName("user_id") val userId: String,
+    val type: String,
+    val amount: Long,
+    val category: String,
+    val wallet: String = "Tunai / Cash",
+    val note: String = "",
+    val date: Long,
+    @SerialName("created_at") val createdAt: Long = System.currentTimeMillis()
+)
+
+/**
  * Model untuk sinkronisasi DebtReceivable ke Supabase.
  * Nama kolom menggunakan snake_case sesuai konvensi PostgreSQL.
  */
