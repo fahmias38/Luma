@@ -55,11 +55,11 @@ fun DebtScreen(
                         "Utang & Piutang",
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp,
-                        color = SakuTextDark
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = SakuCanvasBackground
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         },
@@ -88,7 +88,7 @@ fun DebtScreen(
                 }
             }
         },
-        containerColor = SakuCanvasBackground
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -185,10 +185,10 @@ private fun DebtSummaryCards(
     }
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = SakuCardBackground),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(1.dp),
-        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -226,7 +226,7 @@ private fun SummaryCard(
         maximumFractionDigits = 0
     }
     Card(
-        colors = CardDefaults.cardColors(containerColor = SakuInputBackground),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
         shape = RoundedCornerShape(16.dp),
         modifier = modifier
     ) {
@@ -234,7 +234,7 @@ private fun SummaryCard(
             Text(
                 text = label,
                 fontSize = 12.sp,
-                color = SakuTextMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Medium
             )
             Spacer(modifier = Modifier.height(6.dp))
@@ -264,18 +264,18 @@ private fun DebtFilterTabs(
         ).forEach { (filter, label) ->
             val selected = currentFilter == filter
             val bgColor by animateColorAsState(
-                targetValue = if (selected) MaterialTheme.colorScheme.primary else SakuCardBackground,
+                targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
                 label = "filterBg"
             )
             val textColor by animateColorAsState(
-                targetValue = if (selected) Color.White else SakuTextMuted,
+                targetValue = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                 label = "filterText"
             )
             Surface(
                 onClick = { onFilterChange(filter) },
                 shape = RoundedCornerShape(24.dp),
                 color = bgColor,
-                border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
                 shadowElevation = if (selected) 2.dp else 0.dp,
                 modifier = Modifier
                     .weight(1f)
@@ -313,10 +313,10 @@ fun DebtItemCard(
     val remainingAmount = (item.amount - item.paidAmount).coerceAtLeast(0L)
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = SakuCardBackground),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(1.dp),
-        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)

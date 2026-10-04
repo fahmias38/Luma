@@ -142,7 +142,7 @@ fun ProfileScreen(
             ProfileTopAppBar(onNotificationClick = onNotificationClick)
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-        containerColor = Color(0xFFF8FAFC),
+        containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier
     ) { innerPadding ->
         Column(
@@ -159,173 +159,6 @@ fun ProfileScreen(
                 email = uiState.user?.email ?: "fahmi.ramadhan@kampus.ac.id",
                 onEditClick = { showEditProfileDialog = true }
             )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // ===== SEKSI 1: KEUANGAN & AKUN =====
-            SectionTitle(title = "KEUANGAN & AKUN")
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Card(
-                colors = CardDefaults.cardColors(containerColor = SakuCardBackground),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column {
-                    ProfileMenuItem(
-                        icon = Icons.Default.Payments,
-                        iconBgColor = Color(0xFFEEF2FF),
-                        iconTintColor = SakuPrimary,
-                        title = "Mata Uang",
-                        subtitle = "Format kalkulasi dan pembukuan",
-                        trailingContent = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Surface(
-                                    color = Color(0xFFEEF2FF),
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Text(
-                                        text = "Rupiah (IDR)",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = SakuPrimary,
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Icon(
-                                    Icons.Default.KeyboardArrowRight,
-                                    contentDescription = null,
-                                    tint = SakuTextMuted
-                                )
-                            }
-                        },
-                        onClick = { showEditProfileDialog = true }
-                    )
-
-                    HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
-
-                    ProfileMenuItem(
-                        icon = Icons.Default.Category,
-                        iconBgColor = Color(0xFFEEF2FF),
-                        iconTintColor = SakuPrimary,
-                        title = "Atur Kategori Transaksi",
-                        subtitle = "Kustomisasi pos belanja harian & uang makan",
-                        trailingContent = {
-                            Icon(
-                                Icons.Default.KeyboardArrowRight,
-                                contentDescription = null,
-                                tint = SakuTextMuted
-                            )
-                        },
-                        onClick = { showEditProfileDialog = true }
-                    )
-
-                    HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
-
-                    ProfileMenuItem(
-                        icon = Icons.Default.AccountBalance,
-                        iconBgColor = Color(0xFFEEF2FF),
-                        iconTintColor = SakuPrimary,
-                        title = "Alokasi Uang Saku Bulanan",
-                        subtitle = "Batas limit maksimal & transfer otomatis",
-                        trailingContent = {
-                            Icon(
-                                Icons.Default.KeyboardArrowRight,
-                                contentDescription = null,
-                                tint = SakuTextMuted
-                            )
-                        },
-                        onClick = { showEditProfileDialog = true }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // ===== SEKSI 2: APLIKASI & PREFERENSI =====
-            SectionTitle(title = "APLIKASI & PREFERENSI")
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Card(
-                colors = CardDefaults.cardColors(containerColor = SakuCardBackground),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column {
-                    ProfileMenuItem(
-                        icon = Icons.Default.Notifications,
-                        iconBgColor = Color(0xFFEEF2FF),
-                        iconTintColor = SakuPrimary,
-                        title = "Notifikasi & Peringatan Tagihan",
-                        subtitle = "Peringatan jatuh tempo kos & WiFi",
-                        onClick = onNotificationClick,
-                        trailingContent = {
-                            Switch(
-                                checked = isNotificationEnabled,
-                                onCheckedChange = { isNotificationEnabled = it },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = Color.White,
-                                    checkedTrackColor = SakuPrimary
-                                )
-                            )
-                        }
-                    )
-
-                    HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
-
-                    ProfileMenuItem(
-                        icon = Icons.Default.Palette,
-                        iconBgColor = Color(0xFFEEF2FF),
-                        iconTintColor = SakuPrimary,
-                        title = "Tampilan & Tema",
-                        subtitle = "Penyesuaian kontras & mode sistem",
-                        trailingContent = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = "Terang (Light)",
-                                    fontSize = 13.sp,
-                                    color = SakuTextMuted
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Icon(
-                                    Icons.Default.KeyboardArrowRight,
-                                    contentDescription = null,
-                                    tint = SakuTextMuted
-                                )
-                            }
-                        }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // ===== SEKSI 3: BANTUAN & FAQ =====
-            Card(
-                colors = CardDefaults.cardColors(containerColor = SakuCardBackground),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                ProfileMenuItem(
-                    icon = Icons.Default.HelpOutline,
-                    iconBgColor = Color(0xFFEEF2FF),
-                    iconTintColor = SakuPrimary,
-                    title = "Bantuan & FAQ",
-                    subtitle = "Pusat panduan penggunaan aplikasi",
-                    trailingContent = {
-                        Icon(
-                            Icons.AutoMirrored.Filled.OpenInNew,
-                            contentDescription = null,
-                            tint = SakuTextMuted,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                )
-            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -427,7 +260,7 @@ private fun ProfileTopAppBar(
     onNotificationClick: () -> Unit
 ) {
     Surface(
-        color = Color(0xFFF8FAFC),
+        color = MaterialTheme.colorScheme.background,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -441,7 +274,7 @@ private fun ProfileTopAppBar(
                 text = "Profil & Pengaturan",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = SakuTextDark
+                color = MaterialTheme.colorScheme.onBackground
             )
 
             // Bell Notification Icon
@@ -455,7 +288,7 @@ private fun ProfileTopAppBar(
                 Icon(
                     imageVector = Icons.Default.Notifications,
                     contentDescription = "Notifikasi",
-                    tint = SakuTextDark,
+                    tint = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.size(24.dp)
                 )
                 // Red badge dot
@@ -480,7 +313,7 @@ private fun ProfileHeaderCard(
     onEditClick: () -> Unit
 ) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = SakuCardBackground),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()

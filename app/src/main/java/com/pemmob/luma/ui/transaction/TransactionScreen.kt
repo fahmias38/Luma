@@ -46,11 +46,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pemmob.luma.data.local.entity.TransactionEntity
-import com.pemmob.luma.ui.theme.SakuCanvasBackground
-import com.pemmob.luma.ui.theme.SakuCardBackground
-import com.pemmob.luma.ui.theme.SakuInputBackground
-import com.pemmob.luma.ui.theme.SakuTextDark
-import com.pemmob.luma.ui.theme.SakuTextMuted
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -94,24 +89,24 @@ fun TransactionScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Riwayat Transaksi", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = SakuTextDark) },
+                title = { Text("Riwayat Transaksi", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = SakuCanvasBackground,
-                    titleContentColor = SakuTextDark
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground
                 )
             )
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddDialog = true },
-                containerColor = Color(0xFF4338CA),
-                contentColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = CircleShape
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Tambah Transaksi")
             }
         },
-        containerColor = SakuCanvasBackground
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -128,16 +123,16 @@ fun TransactionScreen(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("Cari transaksi...", color = SakuTextMuted) },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = SakuTextMuted) },
+                    placeholder = { Text("Cari transaksi...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                     singleLine = true,
                     shape = RoundedCornerShape(24.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = SakuInputBackground,
-                        unfocusedContainerColor = SakuInputBackground,
-                        disabledContainerColor = SakuInputBackground,
-                        focusedBorderColor = Color(0xFF4338CA),
-                        unfocusedBorderColor = Color(0xFFCBD5E1)
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        disabledContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                     ),
                     modifier = Modifier
                         .weight(1f)
@@ -147,15 +142,15 @@ fun TransactionScreen(
                 Surface(
                     onClick = { datePickerDialog.show() },
                     shape = RoundedCornerShape(16.dp),
-                    color = SakuInputBackground,
-                    border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
                     modifier = Modifier.size(54.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.Default.DateRange,
                             contentDescription = "Pilih Tanggal",
-                            tint = Color(0xFF4338CA)
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -172,11 +167,11 @@ fun TransactionScreen(
                     Text(
                         text = "Filter Tanggal: ${filterDateFormat.format(Date(selectedDateFilter!!))}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF4338CA),
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold
                     )
                     TextButton(onClick = { selectedDateFilter = null }) {
-                        Text("Reset Tanggal", fontSize = 12.sp, color = Color(0xFFF43F5E))
+                        Text("Reset Tanggal", fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -230,7 +225,7 @@ fun TransactionScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = Color(0xFF4338CA))
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 }
                 is TransactionUiState.Error -> {
@@ -270,7 +265,7 @@ fun TransactionScreen(
                             Text(
                                 text = "Tidak ada transaksi yang ditemukan.",
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = SakuTextMuted
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     } else {
@@ -317,15 +312,15 @@ fun FilterChipItem(
     selected: Boolean,
     onClick: () -> Unit
 ) {
-    val backgroundColor = if (selected) Color(0xFF4338CA) else SakuCardBackground
-    val contentColor = if (selected) Color.White else SakuTextMuted
+    val backgroundColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+    val contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
 
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(24.dp),
         color = backgroundColor,
         shadowElevation = if (selected) 2.dp else 0.dp,
-        border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
         modifier = Modifier
             .fillMaxWidth()
             .height(36.dp)
@@ -355,10 +350,10 @@ fun FinancialSummaryCards(
     }
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = SakuCardBackground),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -369,7 +364,7 @@ fun FinancialSummaryCards(
         ) {
             // Card Pengeluaran
             Card(
-                colors = CardDefaults.cardColors(containerColor = SakuInputBackground),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.weight(1f)
             ) {
@@ -383,13 +378,13 @@ fun FinancialSummaryCards(
                             modifier = Modifier
                                 .size(28.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFFFEE2E2)),
+                                .background(MaterialTheme.colorScheme.error.copy(alpha = 0.15f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 Icons.Default.ArrowUpward,
                                 contentDescription = null,
-                                tint = Color(0xFFF43F5E),
+                                tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -397,7 +392,7 @@ fun FinancialSummaryCards(
                         Text(
                             text = "Pengeluaran",
                             fontSize = 13.sp,
-                            color = SakuTextMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Medium
                         )
                     }
@@ -406,14 +401,14 @@ fun FinancialSummaryCards(
                         text = currencyFormat.format(totalExpense),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFFF43F5E)
+                        color = MaterialTheme.colorScheme.error
                     )
                 }
             }
 
             // Card Pemasukan
             Card(
-                colors = CardDefaults.cardColors(containerColor = SakuInputBackground),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.weight(1f)
             ) {
@@ -427,13 +422,13 @@ fun FinancialSummaryCards(
                             modifier = Modifier
                                 .size(28.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFFDCFCE7)),
+                                .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 Icons.Default.ArrowDownward,
                                 contentDescription = null,
-                                tint = Color(0xFF10B981),
+                                tint = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -441,7 +436,7 @@ fun FinancialSummaryCards(
                         Text(
                             text = "Pemasukan",
                             fontSize = 13.sp,
-                            color = SakuTextMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Medium
                         )
                     }
@@ -450,7 +445,7 @@ fun FinancialSummaryCards(
                         text = currencyFormat.format(totalIncome),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF10B981)
+                        color = MaterialTheme.colorScheme.secondary
                     )
                 }
             }
@@ -505,23 +500,22 @@ fun GroupedTransactionList(
                             text = dateHeader,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
-                            color = SakuTextDark
+                            color = MaterialTheme.colorScheme.onBackground
                         )
-                        // Net total next to date header made muted gray (SakuTextMuted) as requested
                         Text(
                             text = dayNetStr,
-                            fontWeight = FontWeight.Medium,
+                            fontWeight = FontWeight.SemiBold,
                             fontSize = 13.sp,
-                            color = SakuTextMuted
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(containerColor = SakuCardBackground),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                        border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                     ) {
                         Column(
                             modifier = Modifier.fillMaxWidth()
@@ -534,7 +528,7 @@ fun GroupedTransactionList(
                                 )
                                 if (index < txList.size - 1) {
                                     HorizontalDivider(
-                                        color = Color(0xFFF1F5F9),
+                                        color = MaterialTheme.colorScheme.background,
                                         thickness = 1.dp,
                                         modifier = Modifier.padding(horizontal = 16.dp)
                                     )
@@ -590,13 +584,13 @@ fun TransactionGroupItem(
                 modifier = Modifier
                     .size(42.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFE0E7FF)),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = categoryIcon,
                     contentDescription = null,
-                    tint = Color(0xFF4338CA),
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -609,7 +603,7 @@ fun TransactionGroupItem(
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
-                    color = SakuTextDark
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(3.dp))
                 Row(
@@ -618,20 +612,20 @@ fun TransactionGroupItem(
                 ) {
                     Surface(
                         shape = RoundedCornerShape(6.dp),
-                        color = Color(0xFFE0E7FF)
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                     ) {
                         Text(
                             text = transaction.category,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Medium,
-                            color = Color(0xFF4338CA),
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
                     Text(
                         text = timeStr,
                         fontSize = 11.sp,
-                        color = SakuTextMuted
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -643,7 +637,7 @@ fun TransactionGroupItem(
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
-                color = if (isIncome) Color(0xFF10B981) else Color(0xFFF43F5E)
+                color = if (isIncome) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
             )
         }
     }
@@ -694,7 +688,7 @@ fun TransactionFormDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (transactionToEdit == null) "Tambah Transaksi" else "Edit Transaksi", fontWeight = FontWeight.Bold, color = SakuTextDark) },
+        title = { Text(if (transactionToEdit == null) "Tambah Transaksi" else "Edit Transaksi", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
         text = {
             Column(
                 modifier = Modifier
@@ -715,8 +709,8 @@ fun TransactionFormDialog(
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (type == "EXPENSE") Color(0xFFF43F5E) else SakuInputBackground,
-                            contentColor = if (type == "EXPENSE") Color.White else SakuTextMuted
+                            containerColor = if (type == "EXPENSE") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.background,
+                            contentColor = if (type == "EXPENSE") MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -729,8 +723,8 @@ fun TransactionFormDialog(
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (type == "INCOME") Color(0xFF10B981) else SakuInputBackground,
-                            contentColor = if (type == "INCOME") Color.White else SakuTextMuted
+                            containerColor = if (type == "INCOME") MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.background,
+                            contentColor = if (type == "INCOME") MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -748,16 +742,16 @@ fun TransactionFormDialog(
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = SakuInputBackground,
-                        unfocusedContainerColor = SakuInputBackground,
-                        focusedBorderColor = Color(0xFF4338CA),
-                        unfocusedBorderColor = Color(0xFFCBD5E1)
+                        focusedContainerColor = MaterialTheme.colorScheme.background,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                     )
                 )
                 Text(
                     text = "Sisa saldo saat ini: ${currencyFormat.format(currentBalance)}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = SakuTextMuted
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 // Category Dropdown
@@ -776,10 +770,10 @@ fun TransactionFormDialog(
                             .menuAnchor(),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = SakuInputBackground,
-                            unfocusedContainerColor = SakuInputBackground,
-                            focusedBorderColor = Color(0xFF4338CA),
-                            unfocusedBorderColor = Color(0xFFCBD5E1)
+                            focusedContainerColor = MaterialTheme.colorScheme.background,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                         )
                     )
                     ExposedDropdownMenu(
@@ -815,10 +809,10 @@ fun TransactionFormDialog(
                             .menuAnchor(),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = SakuInputBackground,
-                            unfocusedContainerColor = SakuInputBackground,
-                            focusedBorderColor = Color(0xFF4338CA),
-                            unfocusedBorderColor = Color(0xFFCBD5E1)
+                            focusedContainerColor = MaterialTheme.colorScheme.background,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                         )
                     )
                     ExposedDropdownMenu(
@@ -842,12 +836,12 @@ fun TransactionFormDialog(
                     onClick = { datePickerDialog.show() },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(containerColor = SakuInputBackground),
-                    border = BorderStroke(1.dp, Color(0xFFCBD5E1))
+                    colors = ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.background),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
                 ) {
-                    Icon(Icons.Default.CalendarToday, contentDescription = null, tint = Color(0xFF4338CA))
+                    Icon(Icons.Default.CalendarToday, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Tanggal: ${dateFormat.format(Date(date))}", color = SakuTextDark)
+                    Text("Tanggal: ${dateFormat.format(Date(date))}", color = MaterialTheme.colorScheme.onSurface)
                 }
 
                 // Note
@@ -858,10 +852,10 @@ fun TransactionFormDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = SakuInputBackground,
-                        unfocusedContainerColor = SakuInputBackground,
-                        focusedBorderColor = Color(0xFF4338CA),
-                        unfocusedBorderColor = Color(0xFFCBD5E1)
+                        focusedContainerColor = MaterialTheme.colorScheme.background,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                     )
                 )
 
@@ -882,8 +876,8 @@ fun TransactionFormDialog(
                         onClick = onDelete,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFF43F5E)),
-                        border = BorderStroke(1.dp, Color(0xFFF43F5E))
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
                     ) {
                         Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
@@ -892,7 +886,7 @@ fun TransactionFormDialog(
                 }
             }
         },
-        confirmButton = {
+        confirmButton = background@{
             Button(
                 onClick = {
                     val amount = amountText.toLongOrNull()
@@ -902,7 +896,7 @@ fun TransactionFormDialog(
                     }
                     onSave(type, amount, category, wallet, note, date)
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4338CA)),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text("Simpan Transaksi")
@@ -910,10 +904,10 @@ fun TransactionFormDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Batal", color = SakuTextMuted)
+                Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
-        containerColor = SakuCardBackground,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(24.dp)
     )
 }
