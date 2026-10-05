@@ -18,7 +18,7 @@ class DashboardViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<DashboardUiState>(DashboardUiState.Loading)
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
-    private val _filter = MutableStateFlow(DashboardFilter.MONTH)
+    private val _filter = MutableStateFlow(DashboardFilter.ALL)
     val filter: StateFlow<DashboardFilter> = _filter.asStateFlow()
 
     init {

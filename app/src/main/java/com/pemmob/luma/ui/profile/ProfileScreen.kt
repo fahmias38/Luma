@@ -39,6 +39,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,6 +54,8 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -67,6 +70,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -135,7 +139,10 @@ fun ProfileScreen(
 
     Scaffold(
         topBar = {
-            ProfileTopAppBar(onNotificationClick = onNotificationClick)
+            ProfileTopAppBar(
+                hasNotifications = uiState.hasNotifications,
+                onNotificationClick = onNotificationClick
+            )
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
@@ -186,22 +193,6 @@ fun ProfileScreen(
             }
 
             Spacer(modifier = Modifier.height(20.dp))
-
-            // ===== FOOTER VERSI APLIKASI =====
-            Text(
-                text = "LUMA v1.0.4 for Android",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = "Dirancang untuk Mahasiswa Indonesia",
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 
@@ -222,13 +213,40 @@ fun ProfileScreen(
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
             title = {
-                Text(
-                    text = "Konfirmasi Keluar",
-                    fontWeight = FontWeight.Bold
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFFEE2E2)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = null,
+                            tint = Color(0xFFEF4444),
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("Keluar dari Akun?", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                }
             },
             text = {
-                Text(text = "Apakah Anda yakin ingin keluar dari akun LUMA Anda?")
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Apakah kamu yakin ingin keluar dari aplikasi LUMA? Kamu perlu masuk kembali untuk mengakses akunmu.",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                }
             },
             confirmButton = {
                 Button(
@@ -236,47 +254,45 @@ fun ProfileScreen(
                         showLogoutDialog = false
                         onLogoutClick()
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFEF4444)
-                    )
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Ya, Keluar")
+                    Text("Keluar", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("Batal")
+                TextButton(
+                    onClick = { showLogoutDialog = false },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-            }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(24.dp)
         )
     }
 }
 
 // ===== COMPOSABLE TOP APP BAR =====
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ProfileTopAppBar(
+    hasNotifications: Boolean,
     onNotificationClick: () -> Unit
 ) {
-    Surface(
-        color = MaterialTheme.colorScheme.background,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    TopAppBar(
+        title = {
             Text(
                 text = "Profil & Pengaturan",
-                fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                fontSize = 20.sp,
+                color = MaterialTheme.colorScheme.onBackground
             )
-
-            // Bell Notification Icon
+        },
+        actions = {
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -287,20 +303,16 @@ private fun ProfileTopAppBar(
                 Icon(
                     imageVector = Icons.Default.Notifications,
                     contentDescription = "Notifikasi",
-                    tint = MaterialTheme.colorScheme.onSurface,
+                    tint = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.size(24.dp)
                 )
-                // Red badge dot
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFEF4444))
-                        .align(Alignment.TopEnd)
-                )
             }
-        }
-    }
+            Spacer(modifier = Modifier.width(8.dp))
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background
+        )
+    )
 }
 
 // ===== COMPOSABLE HEADER CARD PROFIL =====
@@ -347,23 +359,6 @@ private fun ProfileHeaderCard(
                             color = Color.White
                         )
                     }
-
-                    // Small student badge icon
-                    Box(
-                        modifier = Modifier
-                            .size(22.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF10B981))
-                            .align(Alignment.BottomEnd),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.School,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(13.dp)
-                        )
-                    }
                 }
 
                 Spacer(modifier = Modifier.width(16.dp))
@@ -399,33 +394,6 @@ private fun ProfileHeaderCard(
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Chip Mahasiswa Aktif
-                    Surface(
-                        color = Color(0xFFDCFCE7),
-                        shape = RoundedCornerShape(50)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(6.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFF166534))
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Mahasiswa Aktif • Akun Personal",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF166534)
-                            )
-                        }
-                    }
                 }
             }
 

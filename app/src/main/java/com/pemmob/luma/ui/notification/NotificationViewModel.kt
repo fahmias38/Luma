@@ -32,4 +32,8 @@ class NotificationViewModel @Inject constructor(
             }
         }
     }
+
+    fun markAsRead() {
+        repository.markAsRead()
+    }
 }

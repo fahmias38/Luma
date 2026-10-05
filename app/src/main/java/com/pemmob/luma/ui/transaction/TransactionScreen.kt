@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -62,6 +63,7 @@ fun TransactionScreen(
 
     var showAddDialog by remember { mutableStateOf(false) }
     var transactionToEdit by remember { mutableStateOf<TransactionEntity?>(null) }
+    var selectedTransactionForDetail by remember { mutableStateOf<TransactionEntity?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedDateFilter by remember { mutableStateOf<Long?>(null) }
     
@@ -271,12 +273,28 @@ fun TransactionScreen(
                     } else {
                         GroupedTransactionList(
                             transactions = displayedTransactions,
-                            onEdit = { transactionToEdit = it }
+                            onEdit = { selectedTransactionForDetail = it }
                         )
                     }
                 }
             }
         }
+    }
+
+    if (selectedTransactionForDetail != null) {
+        TransactionDetailDialog(
+            transaction = selectedTransactionForDetail!!,
+            onDismiss = { selectedTransactionForDetail = null },
+            onEdit = {
+                val tx = selectedTransactionForDetail
+                selectedTransactionForDetail = null
+                transactionToEdit = tx
+            },
+            onDelete = {
+                viewModel.deleteTransaction(selectedTransactionForDetail!!)
+                selectedTransactionForDetail = null
+            }
+        )
     }
 
     if (showAddDialog || transactionToEdit != null) {
@@ -911,4 +929,211 @@ fun TransactionFormDialog(
         containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(24.dp)
     )
+}
+
+@Composable
+fun TransactionDetailDialog(
+    transaction: TransactionEntity,
+    onDismiss: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("id-ID")).apply {
+        maximumFractionDigits = 0
+    }
+    val dateFormat = SimpleDateFormat("dd MMMM yyyy, HH:mm", Locale("id", "ID"))
+    val isIncome = transaction.type == "INCOME"
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Detail Transaksi", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Default.Close, contentDescription = "Tutup")
+                }
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                // Nominal Card
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = if (isIncome) "Pemasukan" else "Pengeluaran",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "${if (isIncome) "+" else "-"}${currencyFormat.format(transaction.amount)}",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isIncome) Color(0xFF10B981) else Color(0xFFF43F5E)
+                        )
+                    }
+                }
+
+                // Info Rows
+                TransactionDetailRow(label = "Kategori", value = transaction.category)
+                TransactionDetailRow(label = "Dompet / Akun", value = transaction.wallet)
+                TransactionDetailRow(label = "Tanggal", value = dateFormat.format(Date(transaction.date)))
+                if (transaction.note.isNotBlank()) {
+                    TransactionDetailRow(label = "Catatan", value = transaction.note)
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Tombol Edit & Hapus di dalam Text Column
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Tombol Edit (Kiri)
+                    Button(
+                        onClick = {
+                            onDismiss()
+                            onEdit()
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Edit", fontWeight = FontWeight.Bold)
+                    }
+
+                    // Tombol Hapus (Kanan)
+                    Button(
+                        onClick = { showDeleteConfirm = true },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626))
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Hapus", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {},
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(24.dp)
+    )
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFFEE2E2)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = null,
+                            tint = Color(0xFFEF4444),
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("Hapus Transaksi Ini?", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Catatan ${if (isIncome) "pemasukan" else "pengeluaran"} sebesar ${currencyFormat.format(transaction.amount)} akan dihapus secara permanen.",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(transaction.category, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                            Text("${if (isIncome) "+" else "-"}${currencyFormat.format(transaction.amount)}", fontWeight = FontWeight.Bold, color = if (isIncome) Color(0xFF10B981) else Color(0xFFF43F5E))
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirm = false
+                        onDismiss()
+                        onDelete()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Hapus", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
+}
+
+@Composable
+private fun TransactionDetailRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(label, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+    }
 }

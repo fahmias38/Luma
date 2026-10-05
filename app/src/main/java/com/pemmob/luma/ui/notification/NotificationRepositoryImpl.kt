@@ -20,6 +20,16 @@ class NotificationRepositoryImpl @Inject constructor(
     private val debtReceivableRepository: DebtReceivableRepository
 ) : NotificationRepository {
 
+    private var lastViewedTime = 0L
+
+    override fun markAsRead() {
+        lastViewedTime = System.currentTimeMillis()
+    }
+
+    override fun hasUnread(): Flow<Boolean> = observeNotifications().map { list ->
+        list.any { it.updatedAt > lastViewedTime }
+    }
+
     override fun observeNotifications(): Flow<List<NotificationItem>> = flow {
         val user = authRepository.getCurrentUser()
         if (user == null) {
@@ -73,7 +83,8 @@ class NotificationRepositoryImpl @Inject constructor(
                                 title = title,
                                 message = message,
                                 timeLabel = getTimeLabel(entity.updatedAt),
-                                type = type
+                                type = type,
+                                updatedAt = entity.updatedAt
                             )
                         }
                 }

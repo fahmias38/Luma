@@ -11,5 +11,6 @@ data class NotificationItem(
     val title: String,
     val message: String,
     val timeLabel: String,
-    val type: String
+    val type: String,
+    val updatedAt: Long = System.currentTimeMillis()
 )

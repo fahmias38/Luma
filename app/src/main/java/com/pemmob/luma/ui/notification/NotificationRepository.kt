@@ -4,4 +4,6 @@ import kotlinx.coroutines.flow.Flow
 
 interface NotificationRepository {
     fun observeNotifications(): Flow<List<NotificationItem>>
+    fun markAsRead()
+    fun hasUnread(): Flow<Boolean>
 }

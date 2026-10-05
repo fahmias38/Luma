@@ -1,5 +1,7 @@
 package com.pemmob.luma.ui.dashboard
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,17 +15,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.pemmob.luma.R
 import com.pemmob.luma.ui.components.*
 import com.pemmob.luma.ui.theme.LUMATheme
 import java.text.NumberFormat
@@ -119,20 +121,55 @@ private fun DashboardSuccessContent(
             )
         }
         item {
+            // Row filter: Kiri "Semua", Kanan "Bulan Ini"
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                FilterChip(
-                    selected = currentFilter == DashboardFilter.MONTH,
-                    onClick = { onFilterChange(DashboardFilter.MONTH) },
-                    label = { Text("Bulan Ini") }
-                )
-                FilterChip(
-                    selected = currentFilter == DashboardFilter.ALL,
-                    onClick = { onFilterChange(DashboardFilter.ALL) },
-                    label = { Text("Semua") }
-                )
+                // Tombol Kiri: Semua
+                Box(modifier = Modifier.weight(1f)) {
+                    val selected = currentFilter == DashboardFilter.ALL
+                    Surface(
+                        onClick = { onFilterChange(DashboardFilter.ALL) },
+                        shape = RoundedCornerShape(24.dp),
+                        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = "Semua",
+                                color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+                }
+                // Tombol Kanan: Bulan Ini
+                Box(modifier = Modifier.weight(1f)) {
+                    val selected = currentFilter == DashboardFilter.MONTH
+                    Surface(
+                        onClick = { onFilterChange(DashboardFilter.MONTH) },
+                        shape = RoundedCornerShape(24.dp),
+                        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = "Bulan Ini",
+                                color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+                }
             }
         }
         item {
@@ -144,12 +181,14 @@ private fun DashboardSuccessContent(
                     title = "Pemasukan",
                     amount = data.income,
                     isIncome = true,
+                    currentFilter = currentFilter,
                     modifier = Modifier.weight(1f)
                 )
                 IncomeExpenseCard(
                     title = "Pengeluaran",
                     amount = data.expense,
                     isIncome = false,
+                    currentFilter = currentFilter,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -254,30 +293,12 @@ private fun DashboardHeader(
                 )
             }
         }
-        Box(contentAlignment = Alignment.Center) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface)
-                    .clickable { onNotificationClick() },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Notifications,
-                    contentDescription = "Notifikasi",
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-            }
-            if (hasNotification) {
-                Box(
-                    modifier = Modifier
-                        .size(10.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFEF4444))
-                        .align(Alignment.TopEnd)
-                )
-            }
+        IconButton(onClick = onNotificationClick) {
+            Icon(
+                imageVector = Icons.Default.Notifications,
+                contentDescription = "Notifikasi",
+                tint = MaterialTheme.colorScheme.onBackground
+            )
         }
     }
 }
@@ -400,6 +421,7 @@ private fun IncomeExpenseCard(
     title: String,
     amount: Double,
     isIncome: Boolean,
+    currentFilter: DashboardFilter,
     modifier: Modifier = Modifier
 ) {
     LumaCard(modifier = modifier) {
@@ -426,15 +448,17 @@ private fun IncomeExpenseCard(
         Spacer(modifier = Modifier.height(16.dp))
         AmountText(
             amount = amount,
-            isIncome = isIncome, // Menggunakan warna custom yang sudah di-mapping di AmountText
+            isIncome = isIncome,
             style = MaterialTheme.typography.titleMedium
         )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "Bulan ini",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-        )
+        if (currentFilter == DashboardFilter.MONTH) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Bulan ini",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+        }
     }
 }
 

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.pemmob.luma.domain.repository.AuthRepository
 import com.pemmob.luma.domain.repository.DebtReceivableRepository
 import com.pemmob.luma.domain.repository.TransactionRepository
+import com.pemmob.luma.ui.notification.NotificationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +18,8 @@ import javax.inject.Inject
 class ProfileViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val transactionRepository: TransactionRepository,
-    private val debtReceivableRepository: DebtReceivableRepository
+    private val debtReceivableRepository: DebtReceivableRepository,
+    private val notificationRepository: NotificationRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -55,6 +57,16 @@ class ProfileViewModel @Inject constructor(
                         val percentage = if (total == 0) 100 else (paid * 100) / total
 
                         _uiState.update { it.copy(paidDebtPercentage = percentage) }
+                    }
+                } catch (_: Exception) {}
+            }
+
+            // Observe notifications for red badge dot
+            launch {
+                try {
+                    notificationRepository.observeNotifications().collect { notifications ->
+                        val hasRecent = notifications.any { System.currentTimeMillis() - it.updatedAt < 60 * 1000L }
+                        _uiState.update { it.copy(hasNotifications = hasRecent) }
                     }
                 } catch (_: Exception) {}
             }

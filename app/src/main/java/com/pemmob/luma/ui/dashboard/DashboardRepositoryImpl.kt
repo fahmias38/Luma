@@ -3,6 +3,7 @@ package com.pemmob.luma.ui.dashboard
 import com.pemmob.luma.domain.repository.AuthRepository
 import com.pemmob.luma.domain.repository.DebtReceivableRepository
 import com.pemmob.luma.domain.repository.TransactionRepository
+import com.pemmob.luma.ui.notification.NotificationRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
@@ -17,7 +18,8 @@ import javax.inject.Singleton
 class DashboardRepositoryImpl @Inject constructor(
     private val authRepository: AuthRepository,
     private val transactionRepository: TransactionRepository,
-    private val debtReceivableRepository: DebtReceivableRepository
+    private val debtReceivableRepository: DebtReceivableRepository,
+    private val notificationRepository: NotificationRepository
 ) : DashboardRepository {
 
     override fun getDashboardData(filter: DashboardFilter): Flow<DashboardData> {
@@ -39,13 +41,15 @@ class DashboardRepositoryImpl @Inject constructor(
             val debtsFlow = debtReceivableRepository.observeByType(userId, "DEBT")
             val receivablesFlow = debtReceivableRepository.observeByType(userId, "RECEIVABLE")
             val paymentsFlow = debtReceivableRepository.observeAllPayments(userId)
+            val hasUnreadFlow = notificationRepository.hasUnread()
 
             combine(
                 allTransactionsFlow,
                 debtsFlow,
                 receivablesFlow,
-                paymentsFlow
-            ) { transactions, debts, receivables, payments ->
+                paymentsFlow,
+                hasUnreadFlow
+            ) { transactions, debts, receivables, payments, hasUnread ->
 
                 val currentCalendar = Calendar.getInstance()
                 val currentMonth = currentCalendar.get(Calendar.MONTH)
@@ -60,24 +64,21 @@ class DashboardRepositoryImpl @Inject constructor(
                 val totalIncomeAllTime = transactions.filter { it.type == "INCOME" }.sumOf { it.amount }
                 val totalExpenseAllTime = transactions.filter { it.type == "EXPENSE" }.sumOf { it.amount }
 
-                // Piutang: uang sudah keluar (KURANGI saldo) saat dibuat, kembali (TAMBAH) saat dilunasi
-                // Utang: tidak berubah saldo saat dibuat, berkurang (KURANGI) saat membayar
-                val totalPaidDebt = payments
-                    .filter { payment -> debts.any { it.id == payment.debtReceivableId } }
-                    .sumOf { it.amount }
-                val totalPaidReceivable = payments
-                    .filter { payment -> receivables.any { it.id == payment.debtReceivableId } }
-                    .sumOf { it.amount }
+                val paidDebtsSum = payments.filter { payment ->
+                    val debt = debts.find { it.id == payment.debtReceivableId }
+                    debt != null
+                }.sumOf { it.amount }
 
-                // Saldo total = income - expense - piutang_keluar + piutang_masuk - bayar_utang
-                val totalReceivableOut = receivables.sumOf { it.amount }   // piutang dikeluarkan
-                val balance = (totalIncomeAllTime - totalExpenseAllTime
-                        - totalPaidDebt                                     // bayar utang mengurangi saldo
-                        - totalReceivableOut                                // piutang keluar mengurangi saldo
-                        + totalPaidReceivable).toDouble()                   // piutang masuk menambah saldo
+                val receivableOutSum = receivables.sumOf { it.amount }
+                val paidReceivablesSum = payments.filter { payment ->
+                    val rec = receivables.find { it.id == payment.debtReceivableId }
+                    rec != null
+                }.sumOf { it.amount }
+
+                val balance = ((totalIncomeAllTime + paidReceivablesSum) - (totalExpenseAllTime + receivableOutSum)).toDouble()
 
                 // =============================================
-                // FILTER: Income/Expense/Category sesuai filter
+                // FILTERED DATA (UNTUK STATISTIK & GRAFIK)
                 // =============================================
                 val filteredTransactions = when (filter) {
                     DashboardFilter.MONTH -> transactions.filter {
@@ -91,25 +92,21 @@ class DashboardRepositoryImpl @Inject constructor(
                 val filteredExpense = filteredTransactions.filter { it.type == "EXPENSE" }.sumOf { it.amount }.toDouble()
 
                 // =============================================
-                // TOP 3 KATEGORI (termasuk "Utang" dan "Piutang")
+                // TOP CATEGORIES (Termasuk Utang & Piutang)
                 // =============================================
-                val expenseByCategory = filteredTransactions
-                    .filter { it.type == "EXPENSE" }
-                    .groupBy { it.category }
-                    .mapValues { entry -> entry.value.sumOf { it.amount }.toDouble() }
-                    .toMutableMap()
+                val expenseByCategory = mutableMapOf<String, Double>()
+                filteredTransactions.filter { it.type == "EXPENSE" }.forEach { tx ->
+                    expenseByCategory[tx.category] = (expenseByCategory[tx.category] ?: 0.0) + tx.amount.toDouble()
+                }
 
-                // Tambahkan "Utang" (pembayaran utang) dan "Piutang" (uang keluar) sebagai kategori
                 val filteredPaidDebt = when (filter) {
-                    DashboardFilter.MONTH -> payments
-                        .filter { payment ->
-                            debts.any { it.id == payment.debtReceivableId } &&
-                            run {
-                                val cal = Calendar.getInstance().apply { timeInMillis = payment.paymentDate }
-                                cal.get(Calendar.MONTH) == currentMonth && cal.get(Calendar.YEAR) == currentYear
-                            }
-                        }.sumOf { it.amount }.toDouble()
-                    DashboardFilter.ALL -> totalPaidDebt.toDouble()
+                    DashboardFilter.MONTH -> payments.filter {
+                        val cal = Calendar.getInstance().apply { timeInMillis = it.paymentDate }
+                        cal.get(Calendar.MONTH) == currentMonth && cal.get(Calendar.YEAR) == currentYear
+                    }.filter { payment ->
+                        debts.any { it.id == payment.debtReceivableId }
+                    }.sumOf { it.amount }.toDouble()
+                    DashboardFilter.ALL -> paidDebtsSum.toDouble()
                 }
 
                 val filteredReceivableOut = when (filter) {
@@ -117,7 +114,7 @@ class DashboardRepositoryImpl @Inject constructor(
                         val cal = Calendar.getInstance().apply { timeInMillis = it.date }
                         cal.get(Calendar.MONTH) == currentMonth && cal.get(Calendar.YEAR) == currentYear
                     }.sumOf { it.amount }.toDouble()
-                    DashboardFilter.ALL -> totalReceivableOut.toDouble()
+                    DashboardFilter.ALL -> receivableOutSum.toDouble()
                 }
 
                 if (filteredPaidDebt > 0) expenseByCategory["Utang"] = filteredPaidDebt
@@ -180,7 +177,7 @@ class DashboardRepositoryImpl @Inject constructor(
                     pendingReceivableCount = pendingReceivableCount,
                     topCategories = topCategories,
                     recentTransactions = recentTransactions,
-                    hasNotification = pendingDebtCount > 0 || pendingReceivableCount > 0
+                    hasNotification = hasUnread
                 )
             }.collect {
                 emit(it)
