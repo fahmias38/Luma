@@ -103,9 +103,30 @@ class TransactionRepositoryImpl @Inject constructor(
 
     override suspend fun syncRemoteTransactions(userId: String): Result<Unit> {
         return runCatching {
-            // Migrasikan transaksi testing lama ke akun aktif pengguna
-            runCatching { transactionDao.migrateLegacyUserId(userId) }
+            // 1. UPLOAD: Unggah seluruh transaksi lokal milik pengguna aktif di HP ke Supabase Cloud
+            val localList = transactionDao.getTransactionsListByUser(userId)
+            if (localList.isNotEmpty()) {
+                val remoteToUpload = localList.map { tx ->
+                    TransactionRemote(
+                        id = tx.id,
+                        userId = tx.userId,
+                        type = tx.type,
+                        amount = tx.amount,
+                        category = tx.category,
+                        wallet = tx.wallet,
+                        note = tx.note,
+                        date = tx.date,
+                        createdAt = tx.createdAt
+                    )
+                }
+                runCatching {
+                    postgrest["transactions"].upsert(remoteToUpload)
+                }.onFailure { e ->
+                    Log.e("SupabaseSync", "Gagal upload transaksi lokal ke Supabase: ${e.message}", e)
+                }
+            }
 
+            // 2. DOWNLOAD: Unduh seluruh transaksi pengguna ini dari Supabase Cloud ke Room DB
             val remoteList = postgrest["transactions"]
                 .select {
                     filter { eq("user_id", userId) }
@@ -115,7 +136,7 @@ class TransactionRepositoryImpl @Inject constructor(
             val localEntities = remoteList.map { remote ->
                 TransactionEntity(
                     id = remote.id,
-                    userId = remote.userId,
+                    userId = remote.userId, // Pertahankan userId asli milik objek remote dari Supabase
                     type = remote.type,
                     amount = remote.amount,
                     category = remote.category,

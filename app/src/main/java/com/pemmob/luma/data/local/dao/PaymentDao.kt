@@ -13,8 +13,8 @@ interface PaymentDao {
     @Query("SELECT * FROM payments WHERE debtReceivableId = :debtId ORDER BY paymentDate DESC")
     fun observeByDebtId(debtId: String): Flow<List<PaymentEntity>>
 
-    @Query("SELECT p.* FROM payments p INNER JOIN debt_receivables d ON p.debtReceivableId = d.id WHERE d.userId = :userId ORDER BY p.paymentDate DESC")
-    fun observeAllByUser(userId: String): Flow<List<PaymentEntity>>
+    @Query("SELECT * FROM payments ORDER BY paymentDate DESC")
+    fun observeAll(): Flow<List<PaymentEntity>>
 
     @Query("SELECT SUM(amount) FROM payments WHERE debtReceivableId = :debtId")
     suspend fun getTotalPaidForDebt(debtId: String): Long?

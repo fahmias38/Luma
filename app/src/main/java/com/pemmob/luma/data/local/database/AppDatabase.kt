@@ -21,7 +21,7 @@ import com.pemmob.luma.data.local.entity.TransactionEntity
         SplitBillEntity::class,
         SplitBillParticipantEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

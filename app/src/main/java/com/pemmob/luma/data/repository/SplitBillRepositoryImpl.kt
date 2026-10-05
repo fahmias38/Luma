@@ -152,16 +152,37 @@ class SplitBillRepositoryImpl @Inject constructor(
 
     override suspend fun syncRemoteSplitBills(userId: String): Result<Unit> {
         return runCatching {
+            // 1. UPLOAD local split bills to Supabase
+            val localBills = splitBillDao.getSplitBillsListByUser(userId)
+            if (localBills.isNotEmpty()) {
+                val remoteBillsToUpload = localBills.map { b ->
+                    SplitBillRemote(
+                        id = b.id,
+                        userId = b.userId,
+                        title = b.title,
+                        totalAmount = b.totalAmount,
+                        payerName = b.payerName,
+                        date = b.date,
+                        createdAt = b.createdAt,
+                        updatedAt = b.updatedAt
+                    )
+                }
+                runCatching {
+                    postgrest["split_bills"].upsert(remoteBillsToUpload)
+                }
+            }
+
+            // 2. DOWNLOAD remote split bills from Supabase
             val remoteBills = postgrest["split_bills"]
                 .select {
                     filter { eq("user_id", userId) }
                 }
                 .decodeList<SplitBillRemote>()
 
-            val localBills = remoteBills.map { remote ->
+            val fetchedBills = remoteBills.map { remote ->
                 SplitBillEntity(
                     id = remote.id,
-                    userId = remote.userId,
+                    userId = remote.userId, // Pertahankan userId asli milik objek remote
                     title = remote.title,
                     totalAmount = remote.totalAmount,
                     payerName = remote.payerName,
@@ -171,8 +192,8 @@ class SplitBillRepositoryImpl @Inject constructor(
                 )
             }
 
-            if (localBills.isNotEmpty()) {
-                splitBillDao.insertAll(localBills)
+            if (fetchedBills.isNotEmpty()) {
+                splitBillDao.insertAll(fetchedBills)
             }
 
             val remoteParticipants = postgrest["split_bill_participants"]

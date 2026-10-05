@@ -9,10 +9,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.automirrored.filled.CallSplit
-import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -41,6 +43,11 @@ fun DebtScreen(
     val uiState by viewModel.listUiState.collectAsStateWithLifecycle()
     val currentFilter by viewModel.currentFilter.collectAsStateWithLifecycle()
     val statusFilter by viewModel.statusFilter.collectAsStateWithLifecycle()
+
+    // Refresh list utang/piutang setiap kali layar Utang ditampilkan
+    LaunchedEffect(Unit) {
+        viewModel.loadList()
+    }
 
     Scaffold(
         topBar = {
@@ -79,7 +86,7 @@ fun DebtScreen(
                     contentColor = Color.White,
                     shape = CircleShape
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Tambah Utang/Piutang")
+                    Icon(Icons.Default.Add, contentDescription = "Tambah Catatan")
                 }
             }
         },
@@ -91,9 +98,69 @@ fun DebtScreen(
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp)
         ) {
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // ===== FILTER CHIPS TIPE (Semua / Utang / Piutang) =====
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
+                    DebtFilterChip(
+                        text = "Semua",
+                        selected = currentFilter == DebtFilter.ALL,
+                        onClick = { viewModel.setFilter(DebtFilter.ALL) }
+                    )
+                }
+                Box(modifier = Modifier.weight(1f)) {
+                    DebtFilterChip(
+                        text = "Utang Saya",
+                        selected = currentFilter == DebtFilter.DEBT,
+                        onClick = { viewModel.setFilter(DebtFilter.DEBT) }
+                    )
+                }
+                Box(modifier = Modifier.weight(1f)) {
+                    DebtFilterChip(
+                        text = "Piutang",
+                        selected = currentFilter == DebtFilter.RECEIVABLE,
+                        onClick = { viewModel.setFilter(DebtFilter.RECEIVABLE) }
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Summary Cards
+            // ===== FILTER CHIPS STATUS (Semua / Belum Lunas / Lunas) =====
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
+                    DebtStatusChip(
+                        text = "Semua Status",
+                        selected = statusFilter == DebtStatusFilter.ALL,
+                        onClick = { viewModel.setStatusFilter(DebtStatusFilter.ALL) }
+                    )
+                }
+                Box(modifier = Modifier.weight(1f)) {
+                    DebtStatusChip(
+                        text = "Belum Lunas",
+                        selected = statusFilter == DebtStatusFilter.UNPAID,
+                        onClick = { viewModel.setStatusFilter(DebtStatusFilter.UNPAID) }
+                    )
+                }
+                Box(modifier = Modifier.weight(1f)) {
+                    DebtStatusChip(
+                        text = "Lunas",
+                        selected = statusFilter == DebtStatusFilter.PAID,
+                        onClick = { viewModel.setStatusFilter(DebtStatusFilter.PAID) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // ===== SUMMARY CARDS =====
             if (uiState is DebtListUiState.Success) {
                 val state = uiState as DebtListUiState.Success
                 DebtSummaryCards(
@@ -103,25 +170,21 @@ fun DebtScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // 1 Baris 2 Tombol Dropdown (Kiri: Type, Kanan: Status)
-            DebtFiltersRow(
-                currentFilter = currentFilter,
-                onFilterChange = { viewModel.setFilter(it) },
-                currentStatusFilter = statusFilter,
-                onStatusFilterChange = { viewModel.setStatusFilter(it) }
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Content
+            // ===== LIST CONTENT =====
             when (val state = uiState) {
                 is DebtListUiState.Loading -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
                         CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 }
                 is DebtListUiState.Error -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
                             text = state.message,
                             color = MaterialTheme.colorScheme.error,
@@ -136,37 +199,31 @@ fun DebtScreen(
                         DebtFilter.RECEIVABLE -> state.receivableItems
                     }
 
-                    val displayedItems = when (statusFilter) {
+                    val finalItems = when (statusFilter) {
                         DebtStatusFilter.ALL -> typeFiltered
                         DebtStatusFilter.PAID -> typeFiltered.filter { it.status == "PAID" }
                         DebtStatusFilter.UNPAID -> typeFiltered.filter { it.status != "PAID" }
                     }
 
-                    if (displayedItems.isEmpty()) {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    Icons.Default.AccountBalance,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(64.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                                )
-                                Spacer(modifier = Modifier.height(12.dp))
-                                Text(
-                                    text = "Belum ada data.",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+                    if (finalItems.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Belum ada catatan utang atau piutang.",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     } else {
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(10.dp),
-                            contentPadding = PaddingValues(bottom = 100.dp)
+                            modifier = Modifier.fillMaxSize()
                         ) {
-                            items(displayedItems, key = { it.id }) { item ->
+                            items(finalItems, key = { it.id }) { item ->
                                 DebtItemCard(
-                                    item = item,
+                                    entity = item,
                                     onClick = { onNavigateToDetail(item.id) }
                                 )
                             }
@@ -179,106 +236,59 @@ fun DebtScreen(
 }
 
 @Composable
-private fun DebtFiltersRow(
-    currentFilter: DebtFilter,
-    onFilterChange: (DebtFilter) -> Unit,
-    currentStatusFilter: DebtStatusFilter,
-    onStatusFilterChange: (DebtStatusFilter) -> Unit
+private fun DebtFilterChip(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(24.dp),
+        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+        shadowElevation = if (selected) 2.dp else 0.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(36.dp)
     ) {
-        // Left Dropdown: Type (Semua, Utang, Piutang)
-        Box(modifier = Modifier.weight(1f)) {
-            var expandedType by remember { mutableStateOf(false) }
-            val typeLabel = when (currentFilter) {
-                DebtFilter.ALL -> "Semua"
-                DebtFilter.DEBT -> "Utang"
-                DebtFilter.RECEIVABLE -> "Piutang"
-            }
-            Surface(
-                onClick = { expandedType = true },
-                shape = RoundedCornerShape(20.dp),
-                color = if (currentFilter != DebtFilter.ALL) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(36.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = typeLabel,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = if (currentFilter != DebtFilter.ALL) Color.White else MaterialTheme.colorScheme.onSurface
-                    )
-                    Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = null,
-                        tint = if (currentFilter != DebtFilter.ALL) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-            DropdownMenu(
-                expanded = expandedType,
-                onDismissRequest = { expandedType = false }
-            ) {
-                DropdownMenuItem(text = { Text("Semua") }, onClick = { onFilterChange(DebtFilter.ALL); expandedType = false })
-                DropdownMenuItem(text = { Text("Utang") }, onClick = { onFilterChange(DebtFilter.DEBT); expandedType = false })
-                DropdownMenuItem(text = { Text("Piutang") }, onClick = { onFilterChange(DebtFilter.RECEIVABLE); expandedType = false })
-            }
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = text,
+                color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Medium,
+                fontSize = 12.sp,
+                maxLines = 1
+            )
         }
+    }
+}
 
-        // Right Dropdown: Status (Semua Status, Belum Lunas, Sudah Lunas)
-        Box(modifier = Modifier.weight(1f)) {
-            var expandedStatus by remember { mutableStateOf(false) }
-            val statusLabel = when (currentStatusFilter) {
-                DebtStatusFilter.ALL -> "Semua Status"
-                DebtStatusFilter.UNPAID -> "Belum Lunas"
-                DebtStatusFilter.PAID -> "Sudah Lunas"
-            }
-            Surface(
-                onClick = { expandedStatus = true },
-                shape = RoundedCornerShape(20.dp),
-                color = if (currentStatusFilter != DebtStatusFilter.ALL) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surface,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(36.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = statusLabel,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = if (currentStatusFilter != DebtStatusFilter.ALL) Color.White else MaterialTheme.colorScheme.onSurface
-                    )
-                    Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = null,
-                        tint = if (currentStatusFilter != DebtStatusFilter.ALL) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-            DropdownMenu(
-                expanded = expandedStatus,
-                onDismissRequest = { expandedStatus = false }
-            ) {
-                DropdownMenuItem(text = { Text("Semua Status") }, onClick = { onStatusFilterChange(DebtStatusFilter.ALL); expandedStatus = false })
-                DropdownMenuItem(text = { Text("Belum Lunas") }, onClick = { onStatusFilterChange(DebtStatusFilter.UNPAID); expandedStatus = false })
-                DropdownMenuItem(text = { Text("Sudah Lunas") }, onClick = { onStatusFilterChange(DebtStatusFilter.PAID); expandedStatus = false })
-            }
+@Composable
+private fun DebtStatusChip(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        color = if (selected) MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surface,
+        border = BorderStroke(
+            1.dp,
+            if (selected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(32.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = text,
+                color = if (selected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                fontSize = 11.sp,
+                maxLines = 1
+            )
         }
     }
 }
@@ -288,195 +298,252 @@ private fun DebtSummaryCards(
     totalDebt: Long,
     totalReceivable: Long
 ) {
-    val fmt = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("id-ID")).apply {
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("id-ID")).apply {
         maximumFractionDigits = 0
     }
 
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(1.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            // Card Utang Saya
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.error.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.ArrowUpward,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Utang Saya",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = currencyFormat.format(totalDebt),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+
+            // Card Piutang Saya
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.ArrowDownward,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Piutang Saya",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = currencyFormat.format(totalReceivable),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DebtItemCard(
+    entity: DebtReceivableEntity,
+    onClick: () -> Unit
+) {
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("id-ID")).apply {
+        maximumFractionDigits = 0
+    }
+    val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale("id", "ID"))
+    val isDebt = entity.type == "DEBT"
+    val isPaid = entity.status == "PAID"
+    val remaining = (entity.amount - entity.paidAmount).coerceAtLeast(0L)
+
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(14.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            // Utang (merah)
-            SummaryCard(
-                label = "Harus Bayar",
-                amount = totalDebt,
-                amountColor = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.weight(1f)
-            )
-            // Piutang (hijau)
-            SummaryCard(
-                label = "Akan Diterima",
-                amount = totalReceivable,
-                amountColor = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
-
-@Composable
-private fun SummaryCard(
-    label: String,
-    amount: Long,
-    amountColor: Color,
-    modifier: Modifier = Modifier
-) {
-    val fmt = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("id-ID")).apply {
-        maximumFractionDigits = 0
-    }
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        shape = RoundedCornerShape(16.dp),
-        modifier = modifier
-    ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Text(
-                text = label,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Medium
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = fmt.format(amount),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = amountColor
-            )
-        }
-    }
-}
-
-@Composable
-fun DebtItemCard(
-    item: DebtReceivableEntity,
-    onClick: () -> Unit
-) {
-    val fmt = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("id-ID")).apply {
-        maximumFractionDigits = 0
-    }
-    val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.forLanguageTag("id-ID"))
-
-    val isReceivable = item.type == "RECEIVABLE"
-    val isPaid = item.status == "PAID"
-    val typeColor = if (isReceivable) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.tertiary
-    val typeLabel = if (isReceivable) "Piutang" else "Utang"
-    val statusColor = if (isPaid) MaterialTheme.colorScheme.secondary else Color(0xFFF59E0B)
-    val statusLabel = if (isPaid) "Lunas" else "Belum Lunas"
-    val remainingAmount = (item.amount - item.paidAmount).coerceAtLeast(0L)
-
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(1.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar
-            Box(
-                modifier = Modifier
-                    .size(46.dp)
-                    .clip(CircleShape)
-                    .background(typeColor.copy(alpha = 0.12f)),
-                contentAlignment = Alignment.Center
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
             ) {
-                Text(
-                    text = item.personName.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = typeColor
-                )
-            }
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isDebt) MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
+                            else MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
+                    Icon(
+                        imageVector = if (isDebt) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                        contentDescription = null,
+                        tint = if (isDebt) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column {
                     Text(
-                        text = item.personName,
+                        text = entity.personName,
+                        style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 14.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = typeColor.copy(alpha = 0.12f)
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = if (isDebt) MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
+                            else MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
+                        ) {
+                            Text(
+                                text = if (isDebt) "Utang" else "Piutang",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isDebt) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+
+                        if (entity.source == "SPLIT_BILL") {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                            ) {
+                                Text(
+                                    text = "Split Bill",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+
                         Text(
-                            text = typeLabel,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = typeColor,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(3.dp))
-
-                Text(
-                    text = fmt.format(remainingAmount),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = typeColor
-                )
-
-                Spacer(modifier = Modifier.height(3.dp))
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (item.source == "SPLIT_BILL") {
-                        Text(
-                            text = "Split Bill",
+                            text = dateFormat.format(Date(entity.date)),
                             fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Medium
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Text(text = "·", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Text(
-                        text = dateFormat.format(Date(item.date)),
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
 
-            // Status chip
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = statusColor.copy(alpha = 0.12f)
-            ) {
-                Text(
-                    text = statusLabel,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = statusColor,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = currencyFormat.format(entity.amount),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = if (isPaid) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    if (isPaid) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = Color(0xFF10B981),
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = "Lunas",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF10B981)
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = "Sisa: ${currencyFormat.format(remaining)}",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(4.dp))
+                Icon(
+                    Icons.Default.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }

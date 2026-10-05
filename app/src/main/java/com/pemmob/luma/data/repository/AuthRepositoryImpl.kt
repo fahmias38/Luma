@@ -1,5 +1,6 @@
 package com.pemmob.luma.data.repository
 
+import android.util.Log
 import com.pemmob.luma.domain.model.UserDomainModel
 import com.pemmob.luma.domain.repository.AuthRepository
 import io.github.jan.supabase.SupabaseClient
@@ -79,7 +80,8 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun getCurrentUser(): UserDomainModel? {
         return try {
-            val user = supabaseClient.auth.currentUserOrNull() ?: return null
+            val session = supabaseClient.auth.currentSessionOrNull()
+            val user = supabaseClient.auth.currentUserOrNull() ?: session?.user ?: return null
             val fullName = user.userMetadata?.get("full_name")?.toString()?.replace("\"", "")
             UserDomainModel(
                 id = user.id,
@@ -87,6 +89,7 @@ class AuthRepositoryImpl @Inject constructor(
                 fullName = fullName
             )
         } catch (e: Exception) {
+            Log.e("AuthRepository", "Error getCurrentUser: ${e.message}", e)
             null
         }
     }
@@ -143,10 +146,20 @@ class AuthRepositoryImpl @Inject constructor(
 
     private fun mapException(e: Throwable): Throwable {
         val msg = e.message ?: ""
-        return if (e is java.net.UnknownHostException || msg.contains("Unable to resolve host", ignoreCase = true) || msg.contains("UnknownHostException", ignoreCase = true)) {
-            Exception("Tidak dapat terhubung ke server Supabase. Mohon periksa kembali SUPABASE_URL di SupabaseModule.kt dan pastikan koneksi internet aktif.")
-        } else {
-            e
+        return when {
+            e is java.net.UnknownHostException || msg.contains("Unable to resolve host", ignoreCase = true) -> {
+                Exception("Tidak dapat terhubung ke server Supabase. Mohon periksa koneksi internet Anda.")
+            }
+            msg.contains("invalid", ignoreCase = true) || msg.contains("invalid_email", ignoreCase = true) -> {
+                Exception("Format email tidak valid atau email tersebut sudah terdaftar pada akun lain.")
+            }
+            msg.contains("same_email", ignoreCase = true) -> {
+                Exception("Email baru sama dengan email Anda saat ini.")
+            }
+            msg.contains("rate_limit", ignoreCase = true) || msg.contains("rate limit", ignoreCase = true) -> {
+                Exception("Terlalu banyak permintaan perubahan. Silakan tunggu beberapa menit.")
+            }
+            else -> e
         }
     }
 }

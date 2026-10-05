@@ -68,8 +68,14 @@ class SplitBillViewModel @Inject constructor(
                     return@launch
                 }
 
-                splitBillRepository.syncRemoteSplitBills(userId)
+                // Sinkronisasi background dari Supabase ke Room DB
+                launch {
+                    runCatching {
+                        splitBillRepository.syncRemoteSplitBills(userId)
+                    }
+                }
 
+                // Observe Flow langsung dari Room DB
                 splitBillRepository.observeAll(userId)
                     .catch { e ->
                         _listUiState.value = SplitBillListUiState.Error(

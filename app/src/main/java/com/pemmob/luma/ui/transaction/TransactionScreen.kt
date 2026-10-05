@@ -15,9 +15,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DirectionsCar
@@ -29,8 +31,6 @@ import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingBag
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -67,6 +67,11 @@ fun TransactionScreen(
     var searchQuery by remember { mutableStateOf("") }
     var selectedDateFilter by remember { mutableStateOf<Long?>(null) }
     
+    // Refresh data transaksi setiap kali layar Transaksi ditampilkan
+    LaunchedEffect(Unit) {
+        viewModel.loadTransactions()
+    }
+
     val currentBalance = if (uiState is TransactionUiState.Success) {
         (uiState as TransactionUiState.Success).balance
     } else {
@@ -249,12 +254,14 @@ fun TransactionScreen(
                             tx.note.contains(searchQuery, ignoreCase = true) ||
                             tx.wallet.contains(searchQuery, ignoreCase = true)
 
-                        val matchesDate = selectedDateFilter == null || {
+                        val matchesDate = if (selectedDateFilter == null) {
+                            true
+                        } else {
                             val txCal = Calendar.getInstance().apply { timeInMillis = tx.date }
                             val filterCal = Calendar.getInstance().apply { timeInMillis = selectedDateFilter!! }
                             txCal.get(Calendar.YEAR) == filterCal.get(Calendar.YEAR) &&
                                 txCal.get(Calendar.DAY_OF_YEAR) == filterCal.get(Calendar.DAY_OF_YEAR)
-                        }()
+                        }
 
                         matchesSearch && matchesDate
                     }
@@ -282,17 +289,17 @@ fun TransactionScreen(
     }
 
     if (selectedTransactionForDetail != null) {
+        val currentDetail = selectedTransactionForDetail!!
         TransactionDetailDialog(
-            transaction = selectedTransactionForDetail!!,
+            transaction = currentDetail,
             onDismiss = { selectedTransactionForDetail = null },
             onEdit = {
-                // Set dulu transactionToEdit sebelum dismiss agar tidak ada race condition
-                transactionToEdit = selectedTransactionForDetail
+                transactionToEdit = currentDetail
                 selectedTransactionForDetail = null
             },
             onDelete = {
-                viewModel.deleteTransaction(selectedTransactionForDetail!!)
                 selectedTransactionForDetail = null
+                viewModel.deleteTransaction(currentDetail)
             }
         )
     }
@@ -313,13 +320,7 @@ fun TransactionScreen(
                 }
                 showAddDialog = false
                 transactionToEdit = null
-            },
-            onDelete = if (transactionToEdit != null) {
-                {
-                    viewModel.deleteTransaction(transactionToEdit!!)
-                    transactionToEdit = null
-                }
-            } else null
+            }
         )
     }
 }
@@ -667,8 +668,7 @@ fun TransactionFormDialog(
     transactionToEdit: TransactionEntity?,
     currentBalance: Long,
     onDismiss: () -> Unit,
-    onSave: (type: String, amount: Long, category: String, wallet: String, note: String, date: Long) -> Unit,
-    onDelete: (() -> Unit)? = null
+    onSave: (type: String, amount: Long, category: String, wallet: String, note: String, date: Long) -> Unit
 ) {
     val context = LocalContext.current
     var type by remember { mutableStateOf(transactionToEdit?.type ?: "EXPENSE") }
@@ -887,22 +887,6 @@ fun TransactionFormDialog(
                         textAlign = TextAlign.Center
                     )
                 }
-
-                // Delete button if editing
-                if (transactionToEdit != null && onDelete != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    OutlinedButton(
-                        onClick = onDelete,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
-                    ) {
-                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Hapus Transaksi")
-                    }
-                }
             }
         },
         confirmButton = background@{
@@ -1011,7 +995,6 @@ fun TransactionDetailDialog(
                     // Tombol Edit (Kiri)
                     Button(
                         onClick = {
-                            // onEdit sudah mengatur transactionToEdit dan dismiss secara berurutan yang benar
                             onEdit()
                         },
                         modifier = Modifier

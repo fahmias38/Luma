@@ -20,17 +20,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.HelpOutline
-import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
@@ -49,9 +40,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -68,12 +56,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -83,7 +70,6 @@ import com.pemmob.luma.domain.model.UserDomainModel
 @Composable
 fun ProfileRoute(
     onLogoutSuccess: () -> Unit,
-    onNotificationClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
@@ -104,7 +90,6 @@ fun ProfileRoute(
         },
         onLogoutClick = { viewModel.logout() },
         onClearMessages = { viewModel.clearMessages() },
-        onNotificationClick = onNotificationClick,
         modifier = modifier
     )
 }
@@ -117,13 +102,11 @@ fun ProfileScreen(
     onUpdatePassword: (String, String) -> Unit,
     onLogoutClick: () -> Unit,
     onClearMessages: () -> Unit,
-    onNotificationClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showEditProfileDialog by remember { mutableStateOf(false) }
-    var isNotificationEnabled by remember { mutableStateOf(true) }
 
     LaunchedEffect(uiState.successMessage, uiState.errorMessage) {
         uiState.successMessage?.let { msg ->
@@ -139,10 +122,7 @@ fun ProfileScreen(
 
     Scaffold(
         topBar = {
-            ProfileTopAppBar(
-                hasNotifications = uiState.hasNotifications,
-                onNotificationClick = onNotificationClick
-            )
+            ProfileTopAppBar()
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
@@ -279,10 +259,7 @@ fun ProfileScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ProfileTopAppBar(
-    hasNotifications: Boolean,
-    onNotificationClick: () -> Unit
-) {
+private fun ProfileTopAppBar() {
     TopAppBar(
         title = {
             Text(
@@ -291,23 +268,6 @@ private fun ProfileTopAppBar(
                 fontSize = 20.sp,
                 color = MaterialTheme.colorScheme.onBackground
             )
-        },
-        actions = {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .clickable { onNotificationClick() },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Notifications,
-                    contentDescription = "Notifikasi",
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
         },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.background
@@ -342,7 +302,7 @@ private fun ProfileHeaderCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
             ) {
-                // Avatar with Student Badge
+                // Avatar
                 Box {
                     val initial = fullName.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "F"
                     Box(
@@ -464,78 +424,6 @@ private fun ProfileHeaderCard(
             }
         }
     }
-}
-
-// ===== COMPOSABLE ITEM MENU PROFIL =====
-
-@Composable
-private fun ProfileMenuItem(
-    icon: ImageVector,
-    iconBgColor: Color,
-    iconTintColor: Color,
-    title: String,
-    subtitle: String,
-    subtitleColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
-    trailingContent: @Composable () -> Unit,
-    onClick: (() -> Unit)? = null
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(enabled = onClick != null) { onClick?.invoke() }
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(iconBgColor),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = iconTintColor,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = subtitle,
-                fontSize = 12.sp,
-                color = subtitleColor
-            )
-        }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        trailingContent()
-    }
-}
-
-// ===== COMPOSABLE SECTION TITLE =====
-
-@Composable
-private fun SectionTitle(title: String) {
-    Text(
-        text = title,
-        fontSize = 12.sp,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        letterSpacing = 0.5.sp,
-        modifier = Modifier.fillMaxWidth()
-    )
 }
 
 // ===== DIALOG EDIT PROFIL =====

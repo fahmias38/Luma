@@ -1,7 +1,6 @@
 package com.pemmob.luma.ui.dashboard
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,20 +11,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.pemmob.luma.R
 import com.pemmob.luma.ui.components.*
 import com.pemmob.luma.ui.theme.LUMATheme
 import java.text.NumberFormat
@@ -41,7 +37,6 @@ fun DashboardScreen(
     onDebtClick: () -> Unit,
     onSeeAllTransactionsClick: () -> Unit,
     onStatisticsClick: () -> Unit,
-    onNotificationClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -76,8 +71,7 @@ fun DashboardScreen(
                         onSplitBillClick = onSplitBillClick,
                         onDebtClick = onDebtClick,
                         onSeeAllTransactionsClick = onSeeAllTransactionsClick,
-                        onStatisticsClick = onStatisticsClick,
-                        onNotificationClick = onNotificationClick
+                        onStatisticsClick = onStatisticsClick
                     )
                 }
             }
@@ -94,8 +88,7 @@ private fun DashboardSuccessContent(
     onSplitBillClick: () -> Unit,
     onDebtClick: () -> Unit,
     onSeeAllTransactionsClick: () -> Unit,
-    onStatisticsClick: () -> Unit,
-    onNotificationClick: () -> Unit
+    onStatisticsClick: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier
@@ -107,9 +100,7 @@ private fun DashboardSuccessContent(
             Spacer(modifier = Modifier.height(16.dp))
             DashboardHeader(
                 userName = data.userName, 
-                monthYear = data.monthYear,
-                hasNotification = data.hasNotification,
-                onNotificationClick = onNotificationClick
+                monthYear = data.monthYear
             )
         }
         item {
@@ -121,12 +112,10 @@ private fun DashboardSuccessContent(
             )
         }
         item {
-            // Row filter: Kiri "Semua", Kanan "Bulan Ini"
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Tombol Kiri: Semua
                 Box(modifier = Modifier.weight(1f)) {
                     val selected = currentFilter == DashboardFilter.ALL
                     Surface(
@@ -148,7 +137,6 @@ private fun DashboardSuccessContent(
                         }
                     }
                 }
-                // Tombol Kanan: Bulan Ini
                 Box(modifier = Modifier.weight(1f)) {
                     val selected = currentFilter == DashboardFilter.MONTH
                     Surface(
@@ -222,7 +210,6 @@ private fun DashboardSuccessContent(
                     description = "Catat pengeluaran atau pemasukan pertamamu di sini."
                 )
             } else {
-                // Di desain, transaksi tampil sebagai list berurutan dengan divider
                 Column {
                     data.recentTransactions.forEachIndexed { index, tx ->
                         TransactionItem(
@@ -245,7 +232,7 @@ private fun DashboardSuccessContent(
             }
         }
         item {
-            Spacer(modifier = Modifier.height(88.dp)) // Padding bawah ekstra untuk menghindari tertutup FAB
+            Spacer(modifier = Modifier.height(88.dp))
         }
     }
 }
@@ -253,9 +240,7 @@ private fun DashboardSuccessContent(
 @Composable
 private fun DashboardHeader(
     userName: String, 
-    monthYear: String,
-    hasNotification: Boolean,
-    onNotificationClick: () -> Unit
+    monthYear: String
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -284,13 +269,6 @@ private fun DashboardHeader(
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                 )
             }
-        }
-        IconButton(onClick = onNotificationClick) {
-            Icon(
-                imageVector = Icons.Default.Notifications,
-                contentDescription = "Notifikasi",
-                tint = MaterialTheme.colorScheme.onBackground
-            )
         }
     }
 }
@@ -589,7 +567,6 @@ private fun InsightCard(
                             )
                         }
                         Spacer(modifier = Modifier.height(6.dp))
-                        // Bar chart horizontal
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -644,7 +621,7 @@ private fun getDummyDashboardData() = DashboardData(
         TransactionData("3", "Transfer Uang Saku", "9 Sep", "Pemasukan", 500000.0, true, "Transfer Bank"),
         TransactionData("4", "Kopi Belajar Nugas", "8 Sep", "Cafe & Nongkrong", 22000.0, false, null)
     ),
-    hasNotification = true
+    hasNotification = false
 )
 
 @Preview(showBackground = true)
@@ -659,8 +636,7 @@ private fun PreviewDashboardSuccess() {
             onSplitBillClick = {},
             onDebtClick = {},
             onSeeAllTransactionsClick = {},
-            onStatisticsClick = {},
-            onNotificationClick = {}
+            onStatisticsClick = {}
         )
     }
 }
@@ -677,8 +653,7 @@ private fun PreviewDashboardLoading() {
             onSplitBillClick = {},
             onDebtClick = {},
             onSeeAllTransactionsClick = {},
-            onStatisticsClick = {},
-            onNotificationClick = {}
+            onStatisticsClick = {}
         )
     }
 }
@@ -696,8 +671,7 @@ private fun PreviewDashboardEmpty() {
             onSplitBillClick = {},
             onDebtClick = {},
             onSeeAllTransactionsClick = {},
-            onStatisticsClick = {},
-            onNotificationClick = {}
+            onStatisticsClick = {}
         )
     }
 }
@@ -714,8 +688,7 @@ private fun PreviewDashboardError() {
             onSplitBillClick = {},
             onDebtClick = {},
             onSeeAllTransactionsClick = {},
-            onStatisticsClick = {},
-            onNotificationClick = {}
+            onStatisticsClick = {}
         )
     }
 }

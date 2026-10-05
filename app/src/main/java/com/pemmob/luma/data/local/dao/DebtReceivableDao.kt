@@ -15,6 +15,9 @@ interface DebtReceivableDao {
     @Query("SELECT * FROM debt_receivables WHERE userId = :userId ORDER BY date DESC")
     fun observeAllByUser(userId: String): Flow<List<DebtReceivableEntity>>
 
+    @Query("SELECT * FROM debt_receivables WHERE userId = :userId ORDER BY date DESC")
+    suspend fun getDebtsListByUser(userId: String): List<DebtReceivableEntity>
+
     @Query("SELECT * FROM debt_receivables WHERE userId = :userId AND type = :type ORDER BY date DESC")
     fun observeByType(userId: String, type: String): Flow<List<DebtReceivableEntity>>
 
@@ -27,8 +30,8 @@ interface DebtReceivableDao {
     @Query("SELECT * FROM debt_receivables WHERE splitBillId = :splitBillId")
     fun observeBySplitBillId(splitBillId: String): Flow<List<DebtReceivableEntity>>
 
-    @Query("UPDATE debt_receivables SET userId = :newUserId WHERE userId = 'local_test_user_id'")
-    suspend fun migrateLegacyUserId(newUserId: String): Int
+    @Query("DELETE FROM debt_receivables WHERE userId = :userId")
+    suspend fun deleteDebtsByUserId(userId: String): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: DebtReceivableEntity): Long

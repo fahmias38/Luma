@@ -152,7 +152,6 @@ fun LumaNavHost(
                     RegisterRoute(
                         onNavigateToLogin = { navController.popBackStack() },
                         onRegisterSuccess = {
-                            // Kembali ke Halaman Login setelah pendaftaran akun baru berhasil
                             navController.popBackStack()
                         }
                     )
@@ -169,8 +168,7 @@ fun LumaNavHost(
                         onSeeAllTransactionsClick = { navigateToTab(TransactionRoute) },
                         onDebtClick = { navigateToTab(DebtRoute) },
                         onSplitBillClick = { navController.navigate(SplitBillRoute) },
-                        onStatisticsClick = { navController.navigate(StatisticsRoute) },
-                        onNotificationClick = { navController.navigate(NotificationRoute) }
+                        onStatisticsClick = { navController.navigate(StatisticsRoute) }
                     )
                 }
 
@@ -253,11 +251,8 @@ fun LumaNavHost(
                     ProfileRoute(
                         onLogoutSuccess = {
                             navController.navigate(AuthGraph) {
-                                popUpTo<MainGraph> { inclusive = true }
+                                popUpTo(0) { inclusive = true }
                             }
-                        },
-                        onNotificationClick = {
-                            navController.navigate(NotificationRoute)
                         }
                     )
                 }

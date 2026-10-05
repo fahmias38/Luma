@@ -15,14 +15,17 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE userId = :userId ORDER BY date DESC")
     fun getAllTransactionsByUser(userId: String): Flow<List<TransactionEntity>>
 
+    @Query("SELECT * FROM transactions WHERE userId = :userId ORDER BY date DESC")
+    suspend fun getTransactionsListByUser(userId: String): List<TransactionEntity>
+
     @Query("SELECT * FROM transactions WHERE userId = :userId AND type = :type ORDER BY date DESC")
     fun getTransactionsByType(userId: String, type: String): Flow<List<TransactionEntity>>
 
     @Query("SELECT * FROM transactions WHERE id = :transactionId")
     suspend fun getTransactionById(transactionId: String): TransactionEntity?
 
-    @Query("UPDATE transactions SET userId = :newUserId WHERE userId = 'local_test_user_id'")
-    suspend fun migrateLegacyUserId(newUserId: String): Int
+    @Query("DELETE FROM transactions WHERE userId = :userId")
+    suspend fun deleteTransactionsByUserId(userId: String): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransaction(transaction: TransactionEntity): Long

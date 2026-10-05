@@ -1,11 +1,13 @@
 package com.pemmob.luma.ui.debt
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pemmob.luma.data.local.entity.DebtReceivableEntity
 import com.pemmob.luma.domain.repository.AuthRepository
 import com.pemmob.luma.domain.repository.DebtReceivableRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,6 +45,8 @@ class DebtViewModel @Inject constructor(
     private val _addPaymentUiState = MutableStateFlow<AddPaymentUiState>(AddPaymentUiState.Idle)
     val addPaymentUiState: StateFlow<AddPaymentUiState> = _addPaymentUiState.asStateFlow()
 
+    private var loadJob: Job? = null
+
     init {
         loadList()
     }
@@ -58,13 +62,15 @@ class DebtViewModel @Inject constructor(
     }
 
     fun loadList() {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             _listUiState.value = DebtListUiState.Loading
             try {
                 val currentUser = authRepository.getCurrentUser()
                 val userId = currentUser?.id
 
                 if (userId.isNullOrBlank()) {
+                    Log.w("DebtVM", "userId null/kosong saat loadList()")
                     _listUiState.value = DebtListUiState.Success(
                         allItems = emptyList(),
                         debtItems = emptyList(),
@@ -75,10 +81,19 @@ class DebtViewModel @Inject constructor(
                     return@launch
                 }
 
-                debtRepository.syncRemoteDebts(userId)
+                // Sinkronisasi background dari Supabase ke Room DB
+                launch {
+                    runCatching {
+                        debtRepository.syncRemoteDebts(userId)
+                    }.onFailure { e ->
+                        Log.e("DebtVM", "Error syncRemoteDebts: ${e.message}", e)
+                    }
+                }
 
+                // Observe Flow langsung dari Room DB secara tunggal (single collector)
                 debtRepository.observeAll(userId)
                     .catch { e ->
+                        Log.e("DebtVM", "Error observeAll: ${e.message}", e)
                         _listUiState.value = DebtListUiState.Error(
                             e.message ?: "Gagal memuat data utang/piutang."
                         )
@@ -95,6 +110,7 @@ class DebtViewModel @Inject constructor(
                         )
                     }
             } catch (e: Exception) {
+                Log.e("DebtVM", "Error loadList: ${e.message}", e)
                 _listUiState.value = DebtListUiState.Error(
                     e.message ?: "Gagal memuat data utang/piutang."
                 )
@@ -152,9 +168,11 @@ class DebtViewModel @Inject constructor(
         viewModelScope.launch {
             _addDebtUiState.value = AddDebtUiState.Loading
             try {
-                val userId = authRepository.getCurrentUser()?.id
+                val currentUser = authRepository.getCurrentUser()
+                val userId = currentUser?.id
                 if (userId.isNullOrBlank()) {
-                    _addDebtUiState.value = AddDebtUiState.Error("Sesi pengguna tidak terdeteksi.")
+                    Log.e("DebtVM", "Gagal menambah utang/piutang: userId null/kosong!")
+                    _addDebtUiState.value = AddDebtUiState.Error("Sesi pengguna tidak terdeteksi. Silakan login kembali.")
                     return@launch
                 }
                 val entity = DebtReceivableEntity(
@@ -167,13 +185,18 @@ class DebtViewModel @Inject constructor(
                     source = "MANUAL"
                 )
                 debtRepository.insertDebt(entity)
-                    .onSuccess { _addDebtUiState.value = AddDebtUiState.Success }
+                    .onSuccess {
+                        Log.d("DebtVM", "Berhasil menambah utang/piutang: ${entity.id}")
+                        _addDebtUiState.value = AddDebtUiState.Success
+                    }
                     .onFailure { e ->
+                        Log.e("DebtVM", "Gagal menyimpan utang/piutang: ${e.message}", e)
                         _addDebtUiState.value = AddDebtUiState.Error(
                             e.message ?: "Gagal menyimpan data."
                         )
                     }
             } catch (e: Exception) {
+                Log.e("DebtVM", "Error addDebt: ${e.message}", e)
                 _addDebtUiState.value = AddDebtUiState.Error(
                     e.message ?: "Terjadi kesalahan."
                 )

@@ -34,7 +34,7 @@ class DebtReceivableRepositoryImpl @Inject constructor(
         paymentDao.observeByDebtId(debtId)
 
     override fun observeAllPayments(userId: String): Flow<List<PaymentEntity>> =
-        paymentDao.observeAllByUser(userId)
+        paymentDao.observeAll()
 
     override fun observeBySplitBillId(splitBillId: String): Flow<List<DebtReceivableEntity>> =
         debtDao.observeBySplitBillId(splitBillId)
@@ -180,9 +180,32 @@ class DebtReceivableRepositoryImpl @Inject constructor(
 
     override suspend fun syncRemoteDebts(userId: String): Result<Unit> {
         return runCatching {
-            // Migrasikan utang/piutang testing lama ke akun aktif pengguna
-            runCatching { debtDao.migrateLegacyUserId(userId) }
+            // 1. UPLOAD: Unggah utang/piutang lokal di HP ke Supabase Cloud
+            val localDebts = debtDao.getDebtsListByUser(userId)
+            if (localDebts.isNotEmpty()) {
+                val remoteDebtsToUpload = localDebts.map { d ->
+                    DebtReceivableRemote(
+                        id = d.id,
+                        userId = d.userId,
+                        personName = d.personName,
+                        type = d.type,
+                        amount = d.amount,
+                        paidAmount = d.paidAmount,
+                        description = d.description,
+                        date = d.date,
+                        source = d.source,
+                        splitBillId = d.splitBillId,
+                        status = d.status,
+                        createdAt = d.createdAt,
+                        updatedAt = d.updatedAt
+                    )
+                }
+                runCatching {
+                    postgrest["debt_receivables"].upsert(remoteDebtsToUpload)
+                }
+            }
 
+            // 2. DOWNLOAD: Unduh utang/piutang pengguna dari Supabase Cloud
             val remoteDebts = postgrest["debt_receivables"]
                 .select {
                     filter { eq("user_id", userId) }
@@ -192,7 +215,7 @@ class DebtReceivableRepositoryImpl @Inject constructor(
             val localEntities = remoteDebts.map { remote ->
                 DebtReceivableEntity(
                     id = remote.id,
-                    userId = remote.userId,
+                    userId = remote.userId, // Pertahankan userId asli milik objek remote
                     personName = remote.personName,
                     type = remote.type,
                     amount = remote.amount,

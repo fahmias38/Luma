@@ -1,11 +1,13 @@
 package com.pemmob.luma.ui.transaction
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pemmob.luma.data.local.entity.TransactionEntity
 import com.pemmob.luma.domain.repository.AuthRepository
 import com.pemmob.luma.domain.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,6 +27,8 @@ class TransactionViewModel @Inject constructor(
     private val _currentFilter = MutableStateFlow(TransactionFilter.ALL)
     val currentFilter: StateFlow<TransactionFilter> = _currentFilter.asStateFlow()
 
+    private var loadJob: Job? = null
+
     init {
         loadTransactions()
     }
@@ -35,13 +39,15 @@ class TransactionViewModel @Inject constructor(
     }
 
     fun loadTransactions() {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             _uiState.value = TransactionUiState.Loading
             try {
                 val currentUser = authRepository.getCurrentUser()
                 val userId = currentUser?.id
 
                 if (userId.isNullOrBlank()) {
+                    Log.w("TransactionVM", "userId null atau kosong saat loadTransactions()")
                     _uiState.value = TransactionUiState.Success(
                         transactions = emptyList(),
                         totalIncome = 0L,
@@ -51,10 +57,19 @@ class TransactionViewModel @Inject constructor(
                     return@launch
                 }
 
-                transactionRepository.syncRemoteTransactions(userId)
+                // Sinkronisasi background dari Supabase ke Room DB
+                launch {
+                    runCatching {
+                        transactionRepository.syncRemoteTransactions(userId)
+                    }.onFailure { e ->
+                        Log.e("TransactionVM", "Error syncRemoteTransactions: ${e.message}", e)
+                    }
+                }
 
+                // Observe Flow langsung dari Room DB secara tunggal (single collector)
                 transactionRepository.getAllTransactions(userId)
                     .catch { e ->
+                        Log.e("TransactionVM", "Error getAllTransactions Flow: ${e.message}", e)
                         _uiState.value = TransactionUiState.Error(e.message ?: "Terjadi kesalahan saat memuat transaksi.")
                     }
                     .collect { allTransactions ->
@@ -76,6 +91,7 @@ class TransactionViewModel @Inject constructor(
                         )
                     }
             } catch (e: Exception) {
+                Log.e("TransactionVM", "Error loadTransactions: ${e.message}", e)
                 _uiState.value = TransactionUiState.Error(e.message ?: "Gagal memuat data transaksi.")
             }
         }
@@ -93,7 +109,11 @@ class TransactionViewModel @Inject constructor(
             try {
                 val currentUser = authRepository.getCurrentUser()
                 val userId = currentUser?.id
-                if (userId.isNullOrBlank()) return@launch
+                if (userId.isNullOrBlank()) {
+                    Log.e("TransactionVM", "Gagal menambah transaksi: userId null/kosong!")
+                    _uiState.value = TransactionUiState.Error("Sesi pengguna tidak ditemukan. Silakan login kembali.")
+                    return@launch
+                }
 
                 val newTransaction = TransactionEntity(
                     userId = userId,
@@ -105,8 +125,10 @@ class TransactionViewModel @Inject constructor(
                     date = date
                 )
                 transactionRepository.insertTransaction(newTransaction)
+                Log.d("TransactionVM", "Berhasil menambah transaksi lokal & cloud: ${newTransaction.id}")
             } catch (e: Exception) {
-                // Handle error
+                Log.e("TransactionVM", "Gagal menambah transaksi: ${e.message}", e)
+                _uiState.value = TransactionUiState.Error(e.message ?: "Gagal menambah transaksi.")
             }
         }
     }
@@ -132,7 +154,7 @@ class TransactionViewModel @Inject constructor(
                 )
                 transactionRepository.updateTransaction(updated)
             } catch (e: Exception) {
-                // Handle error
+                Log.e("TransactionVM", "Gagal update transaksi: ${e.message}", e)
             }
         }
     }
@@ -142,7 +164,7 @@ class TransactionViewModel @Inject constructor(
             try {
                 transactionRepository.deleteTransaction(transaction)
             } catch (e: Exception) {
-                // Handle error
+                Log.e("TransactionVM", "Gagal delete transaksi: ${e.message}", e)
             }
         }
     }

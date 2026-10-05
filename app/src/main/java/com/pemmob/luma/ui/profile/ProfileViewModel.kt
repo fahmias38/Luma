@@ -1,5 +1,6 @@
 package com.pemmob.luma.ui.profile
 
+import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pemmob.luma.domain.repository.AuthRepository
@@ -83,14 +84,15 @@ class ProfileViewModel @Inject constructor(
     }
 
     fun updateFullName(newFullName: String) {
-        if (newFullName.isBlank()) {
+        val trimmed = newFullName.trim()
+        if (trimmed.isBlank()) {
             _uiState.update { it.copy(errorMessage = "Nama lengkap tidak boleh kosong.") }
             return
         }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
-            authRepository.updateFullName(newFullName.trim())
+            authRepository.updateFullName(trimmed)
                 .onSuccess { updatedUser ->
                     _uiState.update {
                         it.copy(
@@ -112,20 +114,25 @@ class ProfileViewModel @Inject constructor(
     }
 
     fun updateEmail(newEmail: String) {
-        if (newEmail.isBlank()) {
+        val trimmed = newEmail.trim()
+        if (trimmed.isBlank()) {
             _uiState.update { it.copy(errorMessage = "Email tidak boleh kosong.") }
+            return
+        }
+        if (!Patterns.EMAIL_ADDRESS.matcher(trimmed).matches()) {
+            _uiState.update { it.copy(errorMessage = "Format email tidak valid. Contoh: nama@domain.com") }
             return
         }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
-            authRepository.updateEmail(newEmail.trim())
+            authRepository.updateEmail(trimmed)
                 .onSuccess { updatedUser ->
                     _uiState.update {
                         it.copy(
                             user = updatedUser,
                             isLoading = false,
-                            successMessage = "Email berhasil diperbarui!"
+                            successMessage = "Email berhasil diperbarui! Silakan periksa kotak masuk email baru Anda jika konfirmasi diperlukan."
                         )
                     }
                 }
