@@ -263,21 +263,13 @@ private fun DashboardHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            val initial = userName.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "F"
-            Box(
+            androidx.compose.foundation.Image(
+                painter = androidx.compose.ui.res.painterResource(id = com.pemmob.luma.R.drawable.logo),
+                contentDescription = "Logo Luma",
                 modifier = Modifier
                     .size(44.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = initial,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
+            )
             Spacer(modifier = Modifier.width(12.dp))
             Column {
                 val displayName = userName.take(12) + if (userName.length > 12) "…" else ""

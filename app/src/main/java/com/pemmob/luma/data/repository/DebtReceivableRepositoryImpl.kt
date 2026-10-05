@@ -134,7 +134,9 @@ class DebtReceivableRepositoryImpl @Inject constructor(
             paymentDao.insert(payment)
 
             runCatching {
-                postgrest["payments"].upsert(
+                // Gunakan insert biasa, bukan upsert, supaya setiap cicilan tersimpan sebagai baris baru
+                // dan tidak menimpa cicilan sebelumnya di Supabase
+                postgrest["payments"].insert(
                     PaymentRemote(
                         id = payment.id,
                         debtReceivableId = payment.debtReceivableId,
@@ -208,23 +210,32 @@ class DebtReceivableRepositoryImpl @Inject constructor(
                 debtDao.insertAll(localEntities)
             }
 
-            val remotePayments = postgrest["payments"]
-                .select()
-                .decodeList<PaymentRemote>()
+            // Ambil semua debt IDs milik user untuk filter payments
+            val userDebtIds = localEntities.map { it.id }
 
-            val paymentEntities = remotePayments.map { p ->
-                PaymentEntity(
-                    id = p.id,
-                    debtReceivableId = p.debtReceivableId,
-                    amount = p.amount,
-                    paymentDate = p.paymentDate,
-                    note = p.note,
-                    createdAt = p.createdAt
-                )
-            }
+            if (userDebtIds.isNotEmpty()) {
+                val remotePayments = postgrest["payments"]
+                    .select {
+                        filter {
+                            isIn("debt_receivable_id", userDebtIds)
+                        }
+                    }
+                    .decodeList<PaymentRemote>()
 
-            if (paymentEntities.isNotEmpty()) {
-                paymentDao.insertAll(paymentEntities)
+                val paymentEntities = remotePayments.map { p ->
+                    PaymentEntity(
+                        id = p.id,
+                        debtReceivableId = p.debtReceivableId,
+                        amount = p.amount,
+                        paymentDate = p.paymentDate,
+                        note = p.note,
+                        createdAt = p.createdAt
+                    )
+                }
+
+                if (paymentEntities.isNotEmpty()) {
+                    paymentDao.insertAll(paymentEntities)
+                }
             }
         }
     }

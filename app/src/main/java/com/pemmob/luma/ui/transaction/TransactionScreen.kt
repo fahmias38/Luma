@@ -286,9 +286,9 @@ fun TransactionScreen(
             transaction = selectedTransactionForDetail!!,
             onDismiss = { selectedTransactionForDetail = null },
             onEdit = {
-                val tx = selectedTransactionForDetail
+                // Set dulu transactionToEdit sebelum dismiss agar tidak ada race condition
+                transactionToEdit = selectedTransactionForDetail
                 selectedTransactionForDetail = null
-                transactionToEdit = tx
             },
             onDelete = {
                 viewModel.deleteTransaction(selectedTransactionForDetail!!)
@@ -1011,7 +1011,7 @@ fun TransactionDetailDialog(
                     // Tombol Edit (Kiri)
                     Button(
                         onClick = {
-                            onDismiss()
+                            // onEdit sudah mengatur transactionToEdit dan dismiss secara berurutan yang benar
                             onEdit()
                         },
                         modifier = Modifier
