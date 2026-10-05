@@ -103,6 +103,9 @@ class TransactionRepositoryImpl @Inject constructor(
 
     override suspend fun syncRemoteTransactions(userId: String): Result<Unit> {
         return runCatching {
+            // Migrasikan transaksi testing lama ke akun aktif pengguna
+            runCatching { transactionDao.migrateLegacyUserId(userId) }
+
             val remoteList = postgrest["transactions"]
                 .select {
                     filter { eq("user_id", userId) }

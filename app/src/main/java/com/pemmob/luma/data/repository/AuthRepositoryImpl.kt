@@ -39,6 +39,7 @@ class AuthRepositoryImpl @Inject constructor(
         fullName: String
     ): Result<UserDomainModel> {
         return safeApiCall {
+            // 1. Pendaftaran Akun Baru ke Supabase Database
             supabaseClient.auth.signUpWith(Email) {
                 this.email = email
                 this.password = password
@@ -46,13 +47,17 @@ class AuthRepositoryImpl @Inject constructor(
                     put("full_name", fullName)
                 }
             }
-            val user = supabaseClient.auth.currentUserOrNull()
-                ?: throw IllegalStateException("Pendaftaran berhasil. Silakan periksa email Anda jika konfirmasi email diaktifkan.")
 
+            val user = supabaseClient.auth.currentUserOrNull()
+
+            // 2. Sign Out agar tidak langsung masuk, mewajibkan login manual
+            runCatching { supabaseClient.auth.signOut() }
+
+            val metaName = user?.userMetadata?.get("full_name")?.toString()?.replace("\"", "")
             UserDomainModel(
-                id = user.id,
-                email = user.email ?: email,
-                fullName = fullName
+                id = user?.id ?: "",
+                email = user?.email ?: email,
+                fullName = metaName ?: fullName
             )
         }
     }

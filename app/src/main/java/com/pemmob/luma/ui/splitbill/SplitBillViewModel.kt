@@ -61,11 +61,14 @@ class SplitBillViewModel @Inject constructor(
             _listUiState.value = SplitBillListUiState.Loading
             try {
                 val currentUser = authRepository.getCurrentUser()
-                val userId = currentUser?.id ?: "local_test_user_id"
+                val userId = currentUser?.id
 
-                if (currentUser != null && currentUser.id.isNotBlank() && currentUser.id != "local_test_user_id") {
-                    splitBillRepository.syncRemoteSplitBills(currentUser.id)
+                if (userId.isNullOrBlank()) {
+                    _listUiState.value = SplitBillListUiState.Success(emptyList())
+                    return@launch
                 }
+
+                splitBillRepository.syncRemoteSplitBills(userId)
 
                 splitBillRepository.observeAll(userId)
                     .catch { e ->
@@ -189,7 +192,14 @@ class SplitBillViewModel @Inject constructor(
         viewModelScope.launch {
             _createUiState.value = currentState.copy(isSaving = true, error = null)
             try {
-                val userId = authRepository.getCurrentUser()?.id ?: "local_test_user_id"
+                val userId = authRepository.getCurrentUser()?.id
+                if (userId.isNullOrBlank()) {
+                    _createUiState.value = currentState.copy(
+                        isSaving = false,
+                        error = "Sesi pengguna tidak terdeteksi."
+                    )
+                    return@launch
+                }
                 val calc = currentState.calculation
                 splitBillRepository.createSplitBill(
                     userId = userId,

@@ -27,6 +27,9 @@ interface DebtReceivableDao {
     @Query("SELECT * FROM debt_receivables WHERE splitBillId = :splitBillId")
     fun observeBySplitBillId(splitBillId: String): Flow<List<DebtReceivableEntity>>
 
+    @Query("UPDATE debt_receivables SET userId = :newUserId WHERE userId = 'local_test_user_id'")
+    suspend fun migrateLegacyUserId(newUserId: String): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: DebtReceivableEntity): Long
 

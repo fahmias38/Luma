@@ -62,11 +62,20 @@ class DebtViewModel @Inject constructor(
             _listUiState.value = DebtListUiState.Loading
             try {
                 val currentUser = authRepository.getCurrentUser()
-                val userId = currentUser?.id ?: "local_test_user_id"
+                val userId = currentUser?.id
 
-                if (currentUser != null && currentUser.id.isNotBlank() && currentUser.id != "local_test_user_id") {
-                    debtRepository.syncRemoteDebts(currentUser.id)
+                if (userId.isNullOrBlank()) {
+                    _listUiState.value = DebtListUiState.Success(
+                        allItems = emptyList(),
+                        debtItems = emptyList(),
+                        receivableItems = emptyList(),
+                        totalDebt = 0L,
+                        totalReceivable = 0L
+                    )
+                    return@launch
                 }
+
+                debtRepository.syncRemoteDebts(userId)
 
                 debtRepository.observeAll(userId)
                     .catch { e ->
@@ -143,7 +152,11 @@ class DebtViewModel @Inject constructor(
         viewModelScope.launch {
             _addDebtUiState.value = AddDebtUiState.Loading
             try {
-                val userId = authRepository.getCurrentUser()?.id ?: "local_test_user_id"
+                val userId = authRepository.getCurrentUser()?.id
+                if (userId.isNullOrBlank()) {
+                    _addDebtUiState.value = AddDebtUiState.Error("Sesi pengguna tidak terdeteksi.")
+                    return@launch
+                }
                 val entity = DebtReceivableEntity(
                     userId = userId,
                     personName = personName.trim(),

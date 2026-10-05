@@ -33,32 +33,34 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             val user = authRepository.getCurrentUser()
-            val userId = user?.id ?: "local_test_user_id"
+            val userId = user?.id
 
-            // Observe real-time stats from Transaction Repository
-            launch {
-                try {
-                    transactionRepository.getAllTransactions(userId).collect { transactions ->
-                        val totalTx = transactions.size
-                        val earliestDate = transactions.minOfOrNull { it.date } ?: System.currentTimeMillis()
-                        val diffMonths = ((System.currentTimeMillis() - earliestDate) / (1000L * 60 * 60 * 24 * 30)).toInt().coerceAtLeast(1)
+            if (!userId.isNullOrBlank()) {
+                // Observe real-time stats from Transaction Repository
+                launch {
+                    try {
+                        transactionRepository.getAllTransactions(userId).collect { transactions ->
+                            val totalTx = transactions.size
+                            val earliestDate = transactions.minOfOrNull { it.date } ?: System.currentTimeMillis()
+                            val diffMonths = ((System.currentTimeMillis() - earliestDate) / (1000L * 60 * 60 * 24 * 30)).toInt().coerceAtLeast(1)
 
-                        _uiState.update { it.copy(totalTransactions = totalTx, activeMonths = diffMonths) }
-                    }
-                } catch (_: Exception) {}
-            }
+                            _uiState.update { it.copy(totalTransactions = totalTx, activeMonths = diffMonths) }
+                        }
+                    } catch (_: Exception) {}
+                }
 
-            // Observe real-time stats from Debt & Receivable Repository
-            launch {
-                try {
-                    debtReceivableRepository.observeAll(userId).collect { debts ->
-                        val total = debts.size
-                        val paid = debts.count { it.status == "PAID" }
-                        val percentage = if (total == 0) 100 else (paid * 100) / total
+                // Observe real-time stats from Debt & Receivable Repository
+                launch {
+                    try {
+                        debtReceivableRepository.observeAll(userId).collect { debts ->
+                            val total = debts.size
+                            val paid = debts.count { it.status == "PAID" }
+                            val percentage = if (total == 0) 100 else (paid * 100) / total
 
-                        _uiState.update { it.copy(paidDebtPercentage = percentage) }
-                    }
-                } catch (_: Exception) {}
+                            _uiState.update { it.copy(paidDebtPercentage = percentage) }
+                        }
+                    } catch (_: Exception) {}
+                }
             }
 
             // Observe notifications for red badge dot

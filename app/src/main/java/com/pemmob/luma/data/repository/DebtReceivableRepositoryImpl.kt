@@ -34,7 +34,7 @@ class DebtReceivableRepositoryImpl @Inject constructor(
         paymentDao.observeByDebtId(debtId)
 
     override fun observeAllPayments(userId: String): Flow<List<PaymentEntity>> =
-        paymentDao.observeAll()
+        paymentDao.observeAllByUser(userId)
 
     override fun observeBySplitBillId(splitBillId: String): Flow<List<DebtReceivableEntity>> =
         debtDao.observeBySplitBillId(splitBillId)
@@ -134,15 +134,13 @@ class DebtReceivableRepositoryImpl @Inject constructor(
             paymentDao.insert(payment)
 
             runCatching {
-                // Gunakan insert biasa, bukan upsert, supaya setiap cicilan tersimpan sebagai baris baru
-                // dan tidak menimpa cicilan sebelumnya di Supabase
-                postgrest["payments"].insert(
+                postgrest["payments"].upsert(
                     PaymentRemote(
                         id = payment.id,
                         debtReceivableId = payment.debtReceivableId,
                         amount = payment.amount,
                         paymentDate = payment.paymentDate,
-                        note = payment.note,
+                        note = note,
                         createdAt = payment.createdAt
                     )
                 )
@@ -182,6 +180,9 @@ class DebtReceivableRepositoryImpl @Inject constructor(
 
     override suspend fun syncRemoteDebts(userId: String): Result<Unit> {
         return runCatching {
+            // Migrasikan utang/piutang testing lama ke akun aktif pengguna
+            runCatching { debtDao.migrateLegacyUserId(userId) }
+
             val remoteDebts = postgrest["debt_receivables"]
                 .select {
                     filter { eq("user_id", userId) }
@@ -210,32 +211,23 @@ class DebtReceivableRepositoryImpl @Inject constructor(
                 debtDao.insertAll(localEntities)
             }
 
-            // Ambil semua debt IDs milik user untuk filter payments
-            val userDebtIds = localEntities.map { it.id }
+            val remotePayments = postgrest["payments"]
+                .select()
+                .decodeList<PaymentRemote>()
 
-            if (userDebtIds.isNotEmpty()) {
-                val remotePayments = postgrest["payments"]
-                    .select {
-                        filter {
-                            isIn("debt_receivable_id", userDebtIds)
-                        }
-                    }
-                    .decodeList<PaymentRemote>()
+            val paymentEntities = remotePayments.map { p ->
+                PaymentEntity(
+                    id = p.id,
+                    debtReceivableId = p.debtReceivableId,
+                    amount = p.amount,
+                    paymentDate = p.paymentDate,
+                    note = p.note,
+                    createdAt = p.createdAt
+                )
+            }
 
-                val paymentEntities = remotePayments.map { p ->
-                    PaymentEntity(
-                        id = p.id,
-                        debtReceivableId = p.debtReceivableId,
-                        amount = p.amount,
-                        paymentDate = p.paymentDate,
-                        note = p.note,
-                        createdAt = p.createdAt
-                    )
-                }
-
-                if (paymentEntities.isNotEmpty()) {
-                    paymentDao.insertAll(paymentEntities)
-                }
+            if (paymentEntities.isNotEmpty()) {
+                paymentDao.insertAll(paymentEntities)
             }
         }
     }

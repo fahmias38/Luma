@@ -55,11 +55,11 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             authRepository.register(email = email.trim(), password = password, fullName = fullName.trim())
-                .onSuccess { user ->
-                    _currentUser.value = user
+                .onSuccess {
+                    _currentUser.value = null
                     _uiState.value = AuthUiState.Success(
-                        user = user,
-                        message = "Pendaftaran berhasil."
+                        user = null,
+                        message = "Pendaftaran berhasil! Akun Anda telah terdaftar. Silakan masuk menggunakan akun baru Anda."
                     )
                 }
                 .onFailure { exception ->

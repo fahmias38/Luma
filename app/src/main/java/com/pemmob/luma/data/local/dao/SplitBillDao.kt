@@ -19,6 +19,9 @@ interface SplitBillDao {
     @Query("SELECT * FROM split_bills WHERE id = :id")
     fun observeById(id: String): Flow<SplitBillEntity?>
 
+    @Query("UPDATE split_bills SET userId = :newUserId WHERE userId = 'local_test_user_id'")
+    suspend fun migrateLegacyUserId(newUserId: String): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: SplitBillEntity): Long
 

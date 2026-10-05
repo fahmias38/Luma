@@ -21,6 +21,9 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE id = :transactionId")
     suspend fun getTransactionById(transactionId: String): TransactionEntity?
 
+    @Query("UPDATE transactions SET userId = :newUserId WHERE userId = 'local_test_user_id'")
+    suspend fun migrateLegacyUserId(newUserId: String): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransaction(transaction: TransactionEntity): Long
 

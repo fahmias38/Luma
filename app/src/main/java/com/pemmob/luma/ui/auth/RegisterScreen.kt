@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -90,7 +91,13 @@ fun RegisterScreen(
     LaunchedEffect(uiState) {
         when (uiState) {
             is AuthUiState.Success -> {
+                val msg = uiState.message ?: "Pendaftaran berhasil! Akun Anda telah terdaftar. Silakan masuk."
+                scope.launch {
+                    snackbarHostState.showSnackbar(msg)
+                }
+                delay(1200)
                 onRegisterSuccess()
+                onResetState()
             }
             is AuthUiState.Error -> {
                 snackbarHostState.showSnackbar(uiState.message)

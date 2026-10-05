@@ -253,7 +253,7 @@ private fun DashboardSuccessContent(
 @Composable
 private fun DashboardHeader(
     userName: String, 
-    monthYear: String, 
+    monthYear: String,
     hasNotification: Boolean,
     onNotificationClick: () -> Unit
 ) {

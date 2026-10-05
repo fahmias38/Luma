@@ -39,11 +39,19 @@ class TransactionViewModel @Inject constructor(
             _uiState.value = TransactionUiState.Loading
             try {
                 val currentUser = authRepository.getCurrentUser()
-                val userId = currentUser?.id ?: "local_test_user_id"
+                val userId = currentUser?.id
 
-                if (currentUser != null && currentUser.id.isNotBlank() && currentUser.id != "local_test_user_id") {
-                    transactionRepository.syncRemoteTransactions(currentUser.id)
+                if (userId.isNullOrBlank()) {
+                    _uiState.value = TransactionUiState.Success(
+                        transactions = emptyList(),
+                        totalIncome = 0L,
+                        totalExpense = 0L,
+                        balance = 0L
+                    )
+                    return@launch
                 }
+
+                transactionRepository.syncRemoteTransactions(userId)
 
                 transactionRepository.getAllTransactions(userId)
                     .catch { e ->
@@ -84,7 +92,9 @@ class TransactionViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val currentUser = authRepository.getCurrentUser()
-                val userId = currentUser?.id ?: "local_test_user_id"
+                val userId = currentUser?.id
+                if (userId.isNullOrBlank()) return@launch
+
                 val newTransaction = TransactionEntity(
                     userId = userId,
                     type = type,

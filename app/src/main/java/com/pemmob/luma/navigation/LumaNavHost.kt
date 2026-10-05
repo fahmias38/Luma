@@ -52,10 +52,10 @@ import com.pemmob.luma.ui.debt.AddDebtScreen
 import com.pemmob.luma.ui.debt.AddPaymentScreen
 import com.pemmob.luma.ui.debt.DebtDetailScreen
 import com.pemmob.luma.ui.debt.DebtScreen
+import com.pemmob.luma.ui.notification.NotificationContent
 import com.pemmob.luma.ui.profile.ProfileRoute
 import com.pemmob.luma.ui.splitbill.SplitBillScreen
 import com.pemmob.luma.ui.statistics.StatisticsContent
-import com.pemmob.luma.ui.notification.NotificationContent
 import com.pemmob.luma.ui.transaction.TransactionScreen
 
 // ===== DATA CLASS UNTUK BOTTOM NAV ITEMS =====
@@ -152,9 +152,8 @@ fun LumaNavHost(
                     RegisterRoute(
                         onNavigateToLogin = { navController.popBackStack() },
                         onRegisterSuccess = {
-                            navController.navigate(MainGraph) {
-                                popUpTo<AuthGraph> { inclusive = true }
-                            }
+                            // Kembali ke Halaman Login setelah pendaftaran akun baru berhasil
+                            navController.popBackStack()
                         }
                     )
                 }
